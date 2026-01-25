@@ -1,50 +1,72 @@
-
-from flask import Flask, request, jsonify
-import requests
+import math
 import re
 import urllib.parse
-import math
+from datetime import datetime, timezone, timedelta
+from typing import Tuple, Dict
+
+import requests
+from fastapi import FastAPI, HTTPException, Query
+from pydantic import BaseModel, Field
+from cachetools import TTLCache
 
 from tithi import TITHIs, MASAs, RASHIs, Ayana, Ritu
+from db import get_by_date, insert_row, start_tunnel, stop_tunnel, close_connection
 
 
-app = Flask(__name__)
+app = FastAPI(title="Lunar Calendar API", version="1.0.0")
 
-def cartesian_to_longitude(x, y, z):
-    lon = math.atan2(y, x)
-    lon_deg = math.degrees(lon)
-    if lon_deg < 0:
-        lon_deg += 360
-    return lon_deg
+http = requests.Session()
+
+cache = TTLCache(maxsize=512, ttl=12 * 60 * 60)
+
+# in app.py add these lifecycle handlers (place near other top-level definitions)
+@app.on_event("startup")
+def startup():
+    start_tunnel()
+
+@app.on_event("shutdown")
+def shutdown():
+    close_connection()
+    stop_tunnel()
+
+# ------------------ utilities ------------------
+
+def cartesian_to_longitude(x: float, y: float, z: float) -> float:
+    lon = math.degrees(math.atan2(y, x))
+    return lon % 360
 
 
-def get_horizons_xyz(command, date, center="500@399", units="KM"):
-    start_time = f"{date} 00:00"
-    stop_time  = f"{date} 00:01"
-
+def get_horizons_xyz(command: str, date: str) -> Tuple[float, float, float]:
     params = {
         "format": "json",
         "COMMAND": f"'{command}'",
-        "CENTER": f"'{center}'",
+        "CENTER": "'500@399'",
         "EPHEM_TYPE": "'VECTORS'",
-        "START_TIME": f"'{start_time}'",
-        "STOP_TIME": f"'{stop_time}'",
+        "START_TIME": f"'{date} 00:00'",
+        "STOP_TIME": f"'{date} 00:01'",
         "STEP_SIZE": "'1 m'",
         "REF_PLANE": "'ECLIPTIC'",
         "REF_SYSTEM": "'J2000'",
-        "OUT_UNITS": f"'{units}'"
+        "OUT_UNITS": "'KM'",
     }
 
     query = urllib.parse.urlencode(params, safe="'@")
     url = "https://ssd.jpl.nasa.gov/api/horizons.api?" + query
 
-    r = requests.get(url, timeout=60)
-    r.raise_for_status()
-    text = r.json().get("result", "")
+    try:
+        r = http.get(url, timeout=10)
+        r.raise_for_status()
+    except requests.RequestException:
+        raise HTTPException(
+            status_code=503,
+            detail="Ephemeris service unavailable"
+        )
 
+    text = r.json().get("result", "")
     match = re.search(r"\$\$SOE(.*?)\$\$EOE", text, re.S)
+
     if not match:
-        raise ValueError("Ephemeris block not found")
+        raise HTTPException(502, "Invalid ephemeris response")
 
     for line in match.group(1).splitlines():
         m = re.search(
@@ -54,77 +76,123 @@ def get_horizons_xyz(command, date, center="500@399", units="KM"):
         if m:
             return float(m.group(1)), float(m.group(2)), float(m.group(3))
 
-    raise ValueError("XYZ not found")
+    raise HTTPException(502, "Ephemeris parsing failed")
 
 
-def get_ritu_from_longitude(sun_lon: float) -> Ritu:
-    sun_lon = sun_lon % 360
-
-    if sun_lon >= 330 or sun_lon < 30:
+def get_ritu_from_longitude(lon: float) -> Ritu:
+    lon %= 360
+    if lon >= 330 or lon < 30:
         return Ritu.VASANTA
-    elif sun_lon < 90:
+    if lon < 90:
         return Ritu.GRISHMA
-    elif sun_lon < 150:
+    if lon < 150:
         return Ritu.VARSHA
-    elif sun_lon < 210:
+    if lon < 210:
         return Ritu.SHARAD
-    elif sun_lon < 270:
+    if lon < 270:
         return Ritu.HEMANTA
-    else:
-        return Ritu.SHISHIRA
+    return Ritu.SHISHIRA
 
 
-@app.route("/lunar-angle")
-def lunar_angle():
-    date = request.args.get("date", "2026-01-20")
+# ------------------ response model ------------------
 
+class LunarResponse(BaseModel):
+    date: str
+
+    ayana: str
+    ritu: str
+    masa: str
+    paksha: str
+    tithi: str
+    phase: str
+
+    surya_rashi: str
+    chandra_rashi: str
+
+    surya_longitude_deg: float
+    chandra_longitude_deg: float
+    longitudinal_angle_deg: float
+
+    surya_xyz: Tuple[float, float, float]
+    chandra_xyz: Tuple[float, float, float]
+
+
+# ------------------ core service ------------------
+
+def compute_ephemeris(date: str) -> Dict:
+    print('computing...')
     moon_xyz = get_horizons_xyz("301", date)
-    sun_xyz  = get_horizons_xyz("10", date)
+    sun_xyz = get_horizons_xyz("10", date)
 
-    sun_lon  = cartesian_to_longitude(*sun_xyz)
+    sun_lon = cartesian_to_longitude(*sun_xyz)
     moon_lon = cartesian_to_longitude(*moon_xyz)
 
-    angle = moon_lon - sun_lon % 360
+    angle = (moon_lon - sun_lon) % 360
 
-    phase = "Waxing" if angle > 0 else "Waning"
-    tithi = TITHIs[int(angle//12)]
-    masa = MASAs[int(sun_lon//30)]
-    srashi = RASHIs[int(sun_lon//30)]
-    crashi = RASHIs[int(moon_lon//30)]
+    tithi = TITHIs[int(angle // 12)]
+    masa = MASAs[int(sun_lon // 30)]
+    surya_rashi = RASHIs[int(sun_lon // 30)]
+    chandra_rashi = RASHIs[int(moon_lon // 30)]
 
-    ayana_sun_lon = sun_lon % 360
-    if ayana_sun_lon >= 270 or ayana_sun_lon < 90:
-        ayana = Ayana.UTTARAYANA
-    else:
-        ayana = Ayana.DAKSHINAYANA
+    ayana = (
+        Ayana.UTTARAYANA
+        if sun_lon >= 270 or sun_lon < 90
+        else Ayana.DAKSHINAYANA
+    )
 
-    ritu = get_ritu_from_longitude(sun_lon).value
+    return {
+        "date": date,
+        "ayana": ayana.value,
+        "ritu": get_ritu_from_longitude(sun_lon).value,
+        "masa": masa.value,
+        "paksha": tithi.paksha.value,
+        "tithi": tithi.name.value,
+        "phase": "Waxing" if angle < 180 else "Waning",
+        "surya_rashi": surya_rashi.value,
+        "chandra_rashi": chandra_rashi.value,
+        "surya_longitude_deg": sun_lon,
+        "chandra_longitude_deg": moon_lon,
+        "longitudinal_angle_deg": angle,
+        "surya_xyz": sun_xyz,
+        "chandra_xyz": moon_xyz,
+    }
 
-    # return (
-    #     f"Date: {date}\n"
-    #     f"Sun longitude: {sun_lon:.6f}°\n"
-    #     f"Moon longitude: {moon_lon:.6f}°\n"
-    #     f"Longitudinal angle (Moon − Sun): {angle:.6f}°\n"
-    #     f"Phase: {phase}\n"
-    # )
-    return jsonify({
-          "date": date,
-          "sun": {
-              "longitude_deg": sun_lon,
-              "xyz": sun_xyz
-          },
-          "moon": {
-              "longitude_deg": moon_lon,
-              "xyz": moon_xyz
-          },
-          "longitudinal_angle_deg": angle,
-          "ayana": ayana.value,
-          "masa": masa.value,
-          "paksha": tithi.paksha.value,
-          "tithi": tithi.name.value,
-          "surya_rashi": srashi.value,
-          "chandra_rashi": crashi.value,
-          "ritu": ritu,
-          "phase": phase
-      })
 
+# ------------------ API ------------------
+
+@app.get(
+    "/lunar-angle",
+    response_model=LunarResponse,
+    status_code=200
+)
+def lunar_angle(
+    date: str = Query(
+        default=None,
+        description="UTC date in YYYY-MM-DD"
+    )
+):
+    if date is None:
+        date = datetime.now(timezone.utc).strftime("%Y-%m-%d")
+
+    try:
+        datetime.strptime(date, "%Y-%m-%d")
+    except ValueError:
+        raise HTTPException(
+            status_code=400,
+            detail="Invalid date format, expected YYYY-MM-DD"
+        )
+
+    if date in cache:
+        return cache[date]
+
+    row = get_by_date(date)
+    if row:
+        cache[date] = row
+        return row
+
+    data = compute_ephemeris(date)
+
+    insert_row(data)
+    cache[date] = data
+
+    return data

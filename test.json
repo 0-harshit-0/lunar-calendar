@@ -26,3 +26,29 @@
   "surya_rashi": "Makara",
   "tithi": "Dwitiya"
 }
+
+// new
+{
+  "date": "2026-01-25",
+  "ayana": "Uttarayana",
+  "ritu": "Shishira",
+  "masa": "Magha",
+  "paksha": "Shukla Paksha",
+  "tithi": "Saptami",
+  "phase": "Waxing",
+  "surya_rashi": "Kumbha",
+  "chandra_rashi": "Mesha",
+  "surya_longitude_deg": 304.65279777137675,
+  "chandra_longitude_deg": 19.192784022442602,
+  "longitudinal_angle_deg": 74.53998625106584,
+  "surya_xyz": [
+    83741246.82406342,
+    -121150849.3920072,
+    7056.444290034473
+  ],
+  "chandra_xyz": [
+    353861.9880946191,
+    123177.8133521783,
+    21993.36830167419
+  ]
+}
