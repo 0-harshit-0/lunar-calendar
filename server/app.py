@@ -29,6 +29,7 @@ def shutdown():
     close_connection()
     stop_tunnel()
 
+
 # ------------------ utilities ------------------
 
 def cartesian_to_longitude(x: float, y: float, z: float) -> float:
@@ -159,6 +160,10 @@ def compute_ephemeris(date: str) -> Dict:
 
 
 # ------------------ API ------------------
+
+@app.get("/")
+def index():
+    return "hello world!"
 
 @app.get(
     "/lunar-angle",
