@@ -113,16 +113,14 @@ if __name__ == "__main__":
 
     # difference
     longitudinal_angle = moon_lon - sun_lon
+    delta = longitudinal_angle % 360
 
-    # normalize to -180..180
-    if longitudinal_angle > 180:
-        longitudinal_angle -= 360
-    if longitudinal_angle < -180:
-        longitudinal_angle += 360
+    masa_index = int(sun_lon // 30)   # 0 to 11
 
     print("Sun longitude:", sun_lon)
     print("Moon longitude:", moon_lon)
-    print("Longitudinal angle (Moon - Sun):", longitudinal_angle, int(longitudinal_angle/12))
-    print("Tithi:", TITHIS[int(longitudinal_angle/12)-1])
+    print("Longitudinal angle (Moon - Sun):", longitudinal_angle, delta, int(delta//12))
+    print("Tithi:", TITHIS[int(delta // 12)], masa_index)
+
 
 

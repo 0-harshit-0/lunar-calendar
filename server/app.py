@@ -5,7 +5,7 @@ import re
 import urllib.parse
 import math
 
-from tithi import TITHIS
+from tithi import TITHIs, MASAs, RASHIs, Ayana, Ritu
 
 
 app = Flask(__name__)
@@ -57,6 +57,23 @@ def get_horizons_xyz(command, date, center="500@399", units="KM"):
     raise ValueError("XYZ not found")
 
 
+def get_ritu_from_longitude(sun_lon: float) -> Ritu:
+    sun_lon = sun_lon % 360
+
+    if sun_lon >= 330 or sun_lon < 30:
+        return Ritu.VASANTA
+    elif sun_lon < 90:
+        return Ritu.GRISHMA
+    elif sun_lon < 150:
+        return Ritu.VARSHA
+    elif sun_lon < 210:
+        return Ritu.SHARAD
+    elif sun_lon < 270:
+        return Ritu.HEMANTA
+    else:
+        return Ritu.SHISHIRA
+
+
 @app.route("/lunar-angle")
 def lunar_angle():
     date = request.args.get("date", "2026-01-20")
@@ -64,16 +81,24 @@ def lunar_angle():
     moon_xyz = get_horizons_xyz("301", date)
     sun_xyz  = get_horizons_xyz("10", date)
 
-    moon_lon = cartesian_to_longitude(*moon_xyz)
     sun_lon  = cartesian_to_longitude(*sun_xyz)
+    moon_lon = cartesian_to_longitude(*moon_xyz)
 
-    angle = moon_lon - sun_lon
-    if angle > 180:
-        angle -= 360
-    if angle < -180:
-        angle += 360
+    angle = moon_lon - sun_lon % 360
 
     phase = "Waxing" if angle > 0 else "Waning"
+    tithi = TITHIs[int(angle//12)]
+    masa = MASAs[int(sun_lon//30)]
+    srashi = RASHIs[int(sun_lon//30)]
+    crashi = RASHIs[int(moon_lon//30)]
+
+    ayana_sun_lon = sun_lon % 360
+    if ayana_sun_lon >= 270 or ayana_sun_lon < 90:
+        ayana = Ayana.UTTARAYANA
+    else:
+        ayana = Ayana.DAKSHINAYANA
+
+    ritu = get_ritu_from_longitude(sun_lon).value
 
     # return (
     #     f"Date: {date}\n"
@@ -93,7 +118,13 @@ def lunar_angle():
               "xyz": moon_xyz
           },
           "longitudinal_angle_deg": angle,
-          "tithi": TITHIS[int(angle/12)-1],
+          "ayana": ayana.value,
+          "masa": masa.value,
+          "paksha": tithi.paksha.value,
+          "tithi": tithi.name.value,
+          "surya_rashi": srashi.value,
+          "chandra_rashi": crashi.value,
+          "ritu": ritu,
           "phase": phase
       })
 
