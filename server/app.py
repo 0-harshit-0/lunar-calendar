@@ -5,6 +5,9 @@ import re
 import urllib.parse
 import math
 
+from tithi import TITHIS
+
+
 app = Flask(__name__)
 
 def cartesian_to_longitude(x, y, z):
@@ -90,6 +93,7 @@ def lunar_angle():
               "xyz": moon_xyz
           },
           "longitudinal_angle_deg": angle,
+          "tithi": TITHIS[int(angle/12)-1],
           "phase": phase
       })
 
