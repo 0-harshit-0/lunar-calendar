@@ -1,13 +1,28 @@
 {
+  "ayana": "Uttarayana",
+  "chandra_rashi": "Kumbha",
   "date": "2026-01-20",
-  "longitudinal_angle_deg": 13.5701672274871,
+  "longitudinal_angle_deg": 13.570167227487104,
+  "masa": "Pausha",
   "moon": {
-    "longitude_deg": 313.135103877199,
-    "xyz": [267508.767578973, -285515.272645262, -15424.982682907]
+    "longitude_deg": 313.13510387719873,
+    "xyz": [
+      267508.7675789725,
+      -285515.2726452623,
+      -15424.98268290701
+    ]
   },
+  "paksha": "Shukla Paksha",
   "phase": "Waxing",
+  "ritu": "Shishira",
   "sun": {
-    "longitude_deg": 299.564936649712,
-    "xyz": [72634286.5542684, -128041852.077402, 7072.95640726388]
-  }
+    "longitude_deg": 299.5649366497116,
+    "xyz": [
+      72634286.55426842,
+      -128041852.0774023,
+      7072.956407263875
+    ]
+  },
+  "surya_rashi": "Makara",
+  "tithi": "Dwitiya"
 }
