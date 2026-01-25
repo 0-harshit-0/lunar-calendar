@@ -11,6 +11,7 @@ Longitude is an east–west angle around the Earth’s axis and requires a 3D sp
 
 A full geographic position only exists when you think in 3D angles from the Earth’s center.
 
+
 # WHY NOT TAN or SIN or COS
 When distance would matter
 
@@ -38,6 +39,7 @@ One-sentence conclusion
 
 The longitudinal angle is a directional angle, so it must be computed from vector directions using atan2, not from distances using tan.
 
+
 # WHY NOT DOT PRODUCT OVER MAG
 Comparison summary
 Method  What it gives Direction?
@@ -56,6 +58,7 @@ One-sentence takeaway
 
 The dot product is valid, but full 3D gives elongation, while projected dot product gives unsigned longitude, and only atan2 gives signed longitudinal angle, which is why it is preferred.
 
+
 # Waxing
 
 Waxing means:
@@ -73,6 +76,7 @@ The longitudinal angle (Moon − Sun) is positive and increasing
 Examples:
 
 New Moon → Waxing Crescent → First Quarter → Waxing Gibbous → Full Moon
+
 
 # Waning
 
@@ -103,4 +107,39 @@ When the Moon is catching up to the Sun from behind, illumination shrinks → wa
 When the Moon has passed the Sun, illumination grows → waxing
 
 This is why the sign of the longitudinal difference matters.
-      -->
+
+
+# Ritu overview
+
+There are 6 Ritus, each spanning two Rashis (60°):
+
+| Ritu     | Rashis             | Sun longitude |
+| -------- | ------------------ | ------------- |
+| Vasanta  | Meena, Mesha       | 330° to 30°   |
+| Grishma  | Vrishabha, Mithuna | 30° to 90°    |
+| Varsha   | Karka, Simha       | 90° to 150°   |
+| Sharad   | Kanya, Tula        | 150° to 210°  |
+| Hemanta  | Vrishchika, Dhanu  | 210° to 270°  |
+| Shishira | Makara, Kumbha     | 270° to 330°  |
+
+
+# RASHI
+- use moon_lon if you want Chandra Rashi
+- use sun_lon if you want Surya Rashi
+
+
+# Ayana definition
+
+There are two Ayanas, each spanning 180° of solar motion:
+
+Uttarayana: Sun from Makara to Mithuna
+
+Dakshinayana: Sun from Karka to Dhanu
+
+In longitude terms:
+
+Uttarayana: 270° ≤ λ < 90° (wraps around 360)
+
+Dakshinayana: 90° ≤ λ < 270°
+
+This corresponds to the Sun’s northward and southward apparent motion.
