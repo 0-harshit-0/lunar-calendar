@@ -166,7 +166,7 @@ def index():
     return "hello world!"
 
 @app.get(
-    "/lunar-angle",
+    "/info",
     response_model=LunarResponse,
     status_code=200
 )
