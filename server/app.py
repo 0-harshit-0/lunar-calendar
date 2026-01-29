@@ -6,6 +6,7 @@ from typing import Tuple, Dict
 
 import requests
 from fastapi import FastAPI, HTTPException, Query
+from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, Field
 from cachetools import TTLCache
 
@@ -14,6 +15,15 @@ from db import get_by_date, insert_row, start_tunnel, stop_tunnel, close_connect
 
 
 app = FastAPI(title="Lunar Calendar API", version="1.0.0")
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=[
+        "*"
+    ],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 http = requests.Session()
 
