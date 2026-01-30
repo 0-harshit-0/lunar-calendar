@@ -295,11 +295,15 @@
         renderData(data);
         setStatus('Data loaded');
         enableJsonActions(data);
+
+        return data;
       } catch (err) {
         console.error(err);
         setStatus('Could not fetch data: ' + err.message, true);
         clearDisplay();
         disableJsonActions();
+        
+        return null;
       } finally {
         fetchBtn.disabled = false;
       }
@@ -394,12 +398,14 @@
       copyJsonBtn.onclick = null;
     }
 
-    function canvasDraw() {
+    function canvasDraw(data) {
+      if (!data) return;
+      
         const dpr = window.devicePixelRatio || 1;
-  
-      // Example values (replace with API values)
-      const sunLongitudeDeg = 308.717858;
-      const moonLongitudeDeg = 75.948367;
+    
+      console.log(data)
+      const sunLongitudeDeg = data.surya_longitude_deg;
+      const moonLongitudeDeg = data.chandra_longitude_deg;
 
       const canvas = document.getElementById('skyCanvas');
       const ctx = canvas.getContext('2d');
@@ -503,24 +509,25 @@
     });
 
     // form submit handler
-    dateForm.addEventListener('submit', (e) => {
+    dateForm.addEventListener('submit', async (e) => {
       e.preventDefault();
       const iso = dateInput.value;
       if (!iso) {
         setStatus('Please choose a date', true);
         return;
       }
-      fetchForDate(iso);
+      const data = await fetchForDate(iso);
+      canvasDraw(data);
     });
 
     // initial load
-    (function init() {
+    (async function init() {
       dateInput.setAttribute('aria-label', 'Select date for lunar snapshot');
       const today = new Date().toISOString().slice(0, 10);
       dateInput.value = today;
       displayDate.textContent = today;
-      fetchForDate(today);
-      canvasDraw()
+      const data = await fetchForDate(today);
+      canvasDraw(data);
     })();
   </script>
 </body>
