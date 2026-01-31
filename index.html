@@ -107,6 +107,11 @@
                 <dt class="text-slate-600">Moon phase</dt>
                 <dd id="phase" class="font-medium">N/A</dd>
               </div>
+
+              <div class="flex items-start justify-between">
+                <dt class="text-slate-600">Fasting</dt>
+                <dd id="fasting" class="font-medium">N/A</dd>
+              </div>
             </dl>
 
             <details class="mt-auto text-sm text-slate-600">
@@ -115,6 +120,7 @@
                 <li>Ayana and season name give a broad seasonal context.</li>
                 <li>Lunar month and tithi are used in many calendars to mark days.</li>
                 <li>Moon phase tells if the moon is growing or shrinking.</li>
+                <li>Fasting shows if the day is traditionally observed for fasting, often linked to the tithi or specific festivals.</li>
               </ul>
             </details>
           </article>
@@ -263,6 +269,7 @@
     const pakshaEl = document.getElementById('paksha');
     const tithiEl = document.getElementById('tithi');
     const phaseEl = document.getElementById('phase');
+    const fastingEl = document.getElementById('fasting');
     const sunRashiEl = document.getElementById('sunRashi');
     const moonRashiEl = document.getElementById('moonRashi');
     const sunLonEl = document.getElementById('sunLon');
@@ -320,6 +327,7 @@
       pakshaEl.textContent = data.paksha ?? 'N/A';
       tithiEl.textContent = data.tithi ?? 'N/A';
       phaseEl.textContent = data.phase ?? 'N/A';
+      fastingEl.textContent = data.fasting_days ? data.fasting_days.map(z => z.name).join(", ") : 'N/A';
 
       sunRashiEl.textContent = data.surya_rashi ?? 'N/A';
       moonRashiEl.textContent = data.chandra_rashi ?? 'N/A';
@@ -360,7 +368,7 @@
 
     function clearDisplay() {
       displayDate.textContent = exampleDate;
-      const els = [ayanaEl, rituEl, masaEl, pakshaEl, tithiEl, phaseEl, sunRashiEl, moonRashiEl, sunLonEl, moonLonEl, longAngleEl];
+      const els = [ayanaEl, rituEl, masaEl, pakshaEl, tithiEl, phaseEl, fastingEl, sunRashiEl, moonRashiEl, sunLonEl, moonLonEl, longAngleEl];
       els.forEach(e => e.textContent = 'N/A');
       sunXYZPre.textContent = moonXYZPre.textContent = 'N/A';
     }
@@ -401,7 +409,7 @@
     function canvasDraw(data) {
       if (!data) return;
       
-        const dpr = window.devicePixelRatio || 1;
+      const dpr = window.devicePixelRatio || 1;
     
       console.log(data)
       const sunLongitudeDeg = data.surya_longitude_deg;
@@ -409,10 +417,10 @@
 
       const canvas = document.getElementById('skyCanvas');
       const ctx = canvas.getContext('2d');
-  const rect = canvas.getBoundingClientRect();
+      const rect = canvas.getBoundingClientRect();
 
-        canvas.width = Math.round(rect.width * dpr);
-  canvas.height = Math.round(rect.height * dpr);
+      canvas.width = Math.round(rect.width * dpr);
+      canvas.height = Math.round(rect.height * dpr);
 
       const cx = canvas.width / 2;
       const cy = canvas.height / 2;
@@ -443,6 +451,36 @@
       ctx.arc(cx, cy, sunRadius, 0, Math.PI * 2);
       ctx.strokeStyle = '#e5e7eb';
       ctx.stroke();
+
+        // Degree markers around the ecliptic
+      const labelRadius = sunRadius + 18;
+      const tickInner = sunRadius - 4;
+      const tickOuter = sunRadius + 4;
+
+      ctx.font = `${10 * dpr}px system-ui, sans-serif`;
+      ctx.fillStyle = '#475569';
+      ctx.strokeStyle = '#94a3b8';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+
+      for (let deg = 0; deg < 360; deg += 10) {
+        const angle = toCanvasAngle(deg);
+
+        const inner = polarToXY(tickInner, angle);
+        const outer = polarToXY(tickOuter, angle);
+
+        // Tick mark
+        ctx.beginPath();
+        ctx.moveTo(inner.x, inner.y);
+        ctx.lineTo(outer.x, outer.y);
+        ctx.stroke();
+
+        // Label every 30°
+        if (deg % 30 === 0) {
+          const labelPos = polarToXY(labelRadius, angle);
+          ctx.fillText(`${deg}°`, labelPos.x, labelPos.y);
+        }
+      }
 
       // Earth
       ctx.beginPath();
