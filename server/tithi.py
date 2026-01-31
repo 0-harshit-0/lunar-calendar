@@ -1,6 +1,12 @@
 from enum import Enum
 from dataclasses import dataclass
-from typing import List
+from typing import List, Optional
+
+
+class FastingType(Enum):
+    TITHI_BASED = "Tithi-based (Moon–Sun)"
+    SOLAR_BASED = "Solar (Sun longitude)"
+    MIXED_TIME_RULE = "Tithi with time rule"
 
 
 class Ayana(Enum):
@@ -77,6 +83,15 @@ class Tithi:
     index: int
     name: TithiName
 
+@dataclass(frozen=True)
+class FastingDay:
+    name: str
+    fasting_type: FastingType
+    tithi_name: Optional[TithiName] = None
+    paksha: Optional[Paksha] = None
+    masa: Optional[Masa] = None
+    description: str = ""
+
 
 TITHIs: List[Tithi] = [
     *[
@@ -147,4 +162,103 @@ RASHIs: list[Rashi] = [
     Rashi.MAKARA,
     Rashi.KUMBHA,
     Rashi.MEENA,
+]
+FASTING_DAYS: List[FastingDay] = [
+    # --- Ekadashi ---
+    FastingDay(
+        name="Ekadashi",
+        fasting_type=FastingType.MIXED_TIME_RULE,
+        tithi_name=TithiName.EKADASHI,
+        description="Observed on the 11th lunar tithi when it prevails at local sunrise."
+    ),
+
+    # --- Pradosha ---
+    FastingDay(
+        name="Pradosha",
+        fasting_type=FastingType.MIXED_TIME_RULE,
+        tithi_name=TithiName.TRAYODASHI,
+        description="Observed on the 13th tithi during the evening twilight period."
+    ),
+
+    # --- Maha Shivaratri ---
+    FastingDay(
+        name="Maha Shivaratri",
+        fasting_type=FastingType.MIXED_TIME_RULE,
+        tithi_name=TithiName.CHATURDASHI,
+        paksha=Paksha.KRISHNA,
+        masa=Masa.MAGHA,
+        description="Krishna Paksha Chaturdashi of Magha, observed mainly during night."
+    ),
+
+    # --- Amavasya ---
+    FastingDay(
+        name="Amavasya",
+        fasting_type=FastingType.TITHI_BASED,
+        tithi_name=TithiName.AMAVASYA,
+        description="Observed on the new moon when Moon–Sun longitude difference reaches 360°."
+    ),
+
+    # --- Purnima ---
+    FastingDay(
+        name="Purnima",
+        fasting_type=FastingType.TITHI_BASED,
+        tithi_name=TithiName.PURNIMA,
+        description="Observed on the full moon when Moon–Sun longitude difference reaches 180°."
+    ),
+
+    # --- Sankashti Chaturthi ---
+    FastingDay(
+        name="Sankashti Chaturthi",
+        fasting_type=FastingType.TITHI_BASED,
+        tithi_name=TithiName.CHATURTHI,
+        paksha=Paksha.KRISHNA,
+        description="Krishna Paksha Chaturthi dedicated to Ganesha, observed till moonrise."
+    ),
+
+    # --- Vinayaka Chaturthi ---
+    FastingDay(
+        name="Vinayaka Chaturthi",
+        fasting_type=FastingType.TITHI_BASED,
+        tithi_name=TithiName.CHATURTHI,
+        paksha=Paksha.SHUKLA,
+        description="Shukla Paksha Chaturthi dedicated to Ganesha."
+    ),
+
+    # --- Ashtami ---
+    FastingDay(
+        name="Ashtami",
+        fasting_type=FastingType.TITHI_BASED,
+        tithi_name=TithiName.ASHTAMI,
+        description="Observed on the 8th lunar tithi, commonly associated with Devi worship."
+    ),
+
+    # --- Navami ---
+    FastingDay(
+        name="Navami",
+        fasting_type=FastingType.TITHI_BASED,
+        tithi_name=TithiName.NAVAMI,
+        description="Observed on the 9th lunar tithi, notably during Navaratri."
+    ),
+
+    # --- Dwadashi ---
+    FastingDay(
+        name="Dwadashi",
+        fasting_type=FastingType.TITHI_BASED,
+        tithi_name=TithiName.DWADASHI,
+        description="Observed on the 12th tithi, often marking the breaking of Ekadashi fast."
+    ),
+
+    # # --- Sankranti ---
+    # FastingDay(
+    #     name="Sankranti",
+    #     fasting_type=FastingType.SOLAR_BASED,
+    #     description="Observed when the Sun enters a new zodiac sign every 30 degrees."
+    # ),
+
+    # --- Makara Sankranti ---
+    FastingDay(
+        name="Makara Sankranti",
+        fasting_type=FastingType.SOLAR_BASED,
+        description="Observed when the Sun enters Makara Rashi, marking Uttarayana."
+    ),
 ]

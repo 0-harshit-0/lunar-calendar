@@ -18,5 +18,7 @@ CREATE TABLE lunar_ephemeris (
     surya_xyz JSON NOT NULL,
     chandra_xyz JSON NOT NULL,
 
+    fasting_days JSON NOT NULL,
+
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );

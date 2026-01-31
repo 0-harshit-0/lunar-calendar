@@ -10,7 +10,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, Field
 from cachetools import TTLCache
 
-from tithi import TITHIs, MASAs, RASHIs, Ayana, Ritu
+from tithi import TITHIs, MASAs, RASHIs, FASTING_DAYS, Ayana, Ritu
 from db import get_by_date, insert_row, start_tunnel, stop_tunnel, close_connection
 
 
@@ -105,7 +105,41 @@ def get_ritu_from_longitude(lon: float) -> Ritu:
     return Ritu.SHISHIRA
 
 
+def resolve_fasting_days( *, tithi, paksha, masa, sun_lon ) -> list[dict]:
+
+    results: list[dict] = []
+
+    for fd in FASTING_DAYS:
+
+        # --- tithi based ---
+        if fd.tithi_name and fd.tithi_name != tithi.name:
+            continue
+
+        if fd.paksha and fd.paksha != tithi.paksha:
+            continue
+
+        if fd.masa and fd.masa != masa:
+            continue
+
+        # --- solar based ---
+        if fd.fasting_type.name == "SOLAR_BASED":
+            if "Makara" in fd.name:
+                if not (270 <= sun_lon < 300):
+                    continue
+
+        results.append({
+            "name": fd.name,
+            "description": fd.description
+        })
+
+    return results
+
+
 # ------------------ response model ------------------
+
+class FastingInfo(BaseModel):
+    name: str
+    description: str
 
 class LunarResponse(BaseModel):
     date: str
@@ -126,6 +160,8 @@ class LunarResponse(BaseModel):
 
     surya_xyz: Tuple[float, float, float]
     chandra_xyz: Tuple[float, float, float]
+
+    fasting_days: list[FastingInfo]
 
 
 # ------------------ core service ------------------
@@ -151,6 +187,13 @@ def compute_ephemeris(date: str) -> Dict:
         else Ayana.DAKSHINAYANA
     )
 
+    fasting_days = resolve_fasting_days(
+        tithi=tithi,
+        paksha=tithi.paksha,
+        masa=masa,
+        sun_lon=sun_lon
+    )
+
     return {
         "date": date,
         "ayana": ayana.value,
@@ -166,6 +209,7 @@ def compute_ephemeris(date: str) -> Dict:
         "longitudinal_angle_deg": angle,
         "surya_xyz": sun_xyz,
         "chandra_xyz": moon_xyz,
+        "fasting_days": fasting_days,
     }
 
 

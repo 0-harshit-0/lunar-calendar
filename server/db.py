@@ -71,7 +71,7 @@ def get_by_date(date: str):
     conn = get_connection()
     with conn.cursor() as cur:
         cur.execute(
-            "SELECT * FROM lunar_ephemeris WHERE date = %s",
+            "SELECT * FROM lunar_ephemeris WHERE date = %s AND fasting_days IS NOT NULL",
             (date,),
         )
         row = cur.fetchone()
@@ -88,6 +88,17 @@ def get_by_date(date: str):
         row["surya_xyz"] = tuple(json.loads(row["surya_xyz"]))
         row["chandra_xyz"] = tuple(json.loads(row["chandra_xyz"]))
 
+        # normalize fasting_days JSON -> list
+        raw = row.get("fasting_days")
+        print("raw", raw)
+        if raw is None or raw == "null":
+            return None
+            # row["fasting_days"] = []
+        elif isinstance(raw, str):
+            row["fasting_days"] = json.loads(raw)
+        else:
+            row["fasting_days"] = raw
+
         return row
 
 
@@ -97,6 +108,7 @@ def insert_row(data: dict):
     data = data.copy()
     data["surya_xyz"] = json.dumps(data["surya_xyz"])
     data["chandra_xyz"] = json.dumps(data["chandra_xyz"])
+    data["fasting_days"] = json.dumps(data.get("fasting_days", []))
 
     with conn.cursor() as cur:
         cur.execute(
@@ -106,7 +118,7 @@ def insert_row(data: dict):
                 surya_rashi, chandra_rashi,
                 surya_longitude_deg, chandra_longitude_deg,
                 longitudinal_angle_deg,
-                surya_xyz, chandra_xyz
+                surya_xyz, chandra_xyz, fasting_days
             )
             VALUES (
                 %(date)s, %(ayana)s, %(ritu)s, %(masa)s,
@@ -114,9 +126,23 @@ def insert_row(data: dict):
                 %(surya_rashi)s, %(chandra_rashi)s,
                 %(surya_longitude_deg)s, %(chandra_longitude_deg)s,
                 %(longitudinal_angle_deg)s,
-                %(surya_xyz)s, %(chandra_xyz)s
+                %(surya_xyz)s, %(chandra_xyz)s, %(fasting_days)s
             )
-            ON DUPLICATE KEY UPDATE date = date
+            ON DUPLICATE KEY UPDATE
+                ayana = VALUES(ayana),
+                ritu = VALUES(ritu),
+                masa = VALUES(masa),
+                paksha = VALUES(paksha),
+                tithi = VALUES(tithi),
+                phase = VALUES(phase),
+                surya_rashi = VALUES(surya_rashi),
+                chandra_rashi = VALUES(chandra_rashi),
+                surya_longitude_deg = VALUES(surya_longitude_deg),
+                chandra_longitude_deg = VALUES(chandra_longitude_deg),
+                longitudinal_angle_deg = VALUES(longitudinal_angle_deg),
+                surya_xyz = VALUES(surya_xyz),
+                chandra_xyz = VALUES(chandra_xyz),
+                fasting_days = VALUES(fasting_days)
             """,
             data,
         )
