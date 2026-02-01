@@ -30,9 +30,9 @@
   <meta name="robots" content="index, follow">
 
   <!-- Icons -->
-  <link rel="apple-touch-icon" href="/logo128.png">
-  <link rel="icon" type="image/png" sizes="128x128" href="/logo128.png">
-  <link rel="icon" type="image/png" sizes="32x32" href="/logo32.png">
+  <link rel="apple-touch-icon" href="./logo128.png">
+  <link rel="icon" type="image/png" sizes="128x128" href="./logo128.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="./logo32.png">
 
   <script type="application/ld+json">
     {
@@ -345,7 +345,7 @@
       pakshaEl.textContent = data.paksha ?? 'N/A';
       tithiEl.textContent = data.tithi ?? 'N/A';
       phaseEl.textContent = data.phase ?? 'N/A';
-      fastingEl.textContent = data.fasting_days ? data.fasting_days.map(z => z.name).join(", ") : 'N/A';
+      fastingEl.textContent = (data.fasting_days && data.fasting_days.length) ? data.fasting_days.map(z => z.name).join(", ") : 'N/A';
 
       sunRashiEl.textContent = data.surya_rashi ?? 'N/A';
       moonRashiEl.textContent = data.chandra_rashi ?? 'N/A';
