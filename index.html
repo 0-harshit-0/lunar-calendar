@@ -3,18 +3,36 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
+
   <title>Lunar Snapshot</title>
   <meta name="description" content="Friendly, accessible lunar snapshot for any date. See tithi, phase, zodiac signs, longitudes and coordinates. Download or copy JSON." />
-  <!-- Tailwind CSS CDN -->
+
+  <!-- Tailwind CSS CDN (change in production) -->
   <script src="https://cdn.tailwindcss.com"></script>
-  <style>
-    /* small focus helper for consistent visible focus */
-    .focus-ring:focus {
-      outline: none;
-      box-shadow: 0 0 0 3px rgba(99,102,241,0.16);
-      border-radius: .375rem;
-    }
-  </style>
+
+  <!-- Open Graph -->
+  <meta property="og:title" content="Lunar Calendar | Daily Moon and Sun Snapshot">
+  <meta property="og:description" content="Lunar Calendar is an open source web application providing accurate daily Moon and Sun data, including lunar phases, positions, angles, and distances using NASA JPL Horizons ephemeris.">
+  <meta property="og:image" content="https://0-harshit-0.github.io/lunar-calendar/assets/logo.png">
+  <meta property="og:url" content="https://0-harshit-0.github.io/lunar-calendar/">
+  <meta property="og:type" content="website">
+
+  <!-- Twitter -->
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="Lunar Calendar | Daily Moon and Sun Snapshot">
+  <meta name="twitter:description" content="Accurate lunar phases and solar positioning powered by NASA JPL Horizons. Open source, clear, and developer friendly.">
+  <meta name="twitter:image" content="https://0-harshit-0.github.io/lunar-calendar/assets/logo.png">
+
+  <!-- SEO -->
+  <meta name="description" content="Lunar Calendar provides a clear daily snapshot of the Moon and Sun with scientifically accurate ephemeris data from NASA JPL Horizons.">
+  <meta name="keywords" content="lunar calendar, moon phases, sun position, ephemeris, astronomy, nasa jpl, horizons api">
+  <meta name="author" content="Lunar Calendar Open Source Contributors">
+  <meta name="robots" content="index, follow">
+
+  <!-- Icons -->
+  <link rel="apple-touch-icon" href="/logo128.png">
+  <link rel="icon" type="image/png" sizes="128x128" href="/logo128.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/logo32.png">
 
   <script type="application/ld+json">
     {
