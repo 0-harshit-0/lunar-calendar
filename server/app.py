@@ -5,16 +5,21 @@ from datetime import datetime, timezone, timedelta
 from typing import Tuple, Dict
 
 import requests
-from fastapi import FastAPI, HTTPException, Query
+from fastapi import FastAPI, Request, HTTPException, Query, Depends
 from fastapi.middleware.cors import CORSMiddleware
-from pydantic import BaseModel, Field
+from slowapi import Limiter
+from slowapi.util import get_remote_address
+from slowapi.errors import RateLimitExceeded
+from fastapi.responses import JSONResponse
+
+from pydantic import BaseModel, Field, field_validator
 from cachetools import TTLCache
 
 from tithi import TITHIs, MASAs, RASHIs, FASTING_DAYS, Ayana, Ritu
 from db import get_by_date, insert_row, start_tunnel, stop_tunnel, close_connection
 
 
-app = FastAPI(title="Lunar Calendar API", version="1.0.0")
+app = FastAPI(title="Lunar Calendar API")
 app.add_middleware(
     CORSMiddleware,
     allow_origins=[
@@ -27,7 +32,14 @@ app.add_middleware(
 
 http = requests.Session()
 
-cache = TTLCache(maxsize=512, ttl=12 * 60 * 60)
+cache = TTLCache(maxsize=512, ttl=12 * 60 * 60) #12hours
+
+limiter = Limiter(
+    key_func=get_remote_address,
+    default_limits=["120/minute"]
+)
+# app.state.limiter = limiter # configure redis for multiple servers
+
 
 # in app.py add these lifecycle handlers (place near other top-level definitions)
 @app.on_event("startup")
@@ -39,7 +51,12 @@ def shutdown():
     close_connection()
     stop_tunnel()
 
-
+@app.exception_handler(RateLimitExceeded)
+def rate_limit_handler(request: Request, exc: RateLimitExceeded):
+    return JSONResponse(
+        status_code=429,
+        content={"detail": "Rate limit exceeded"}
+    )
 # ------------------ utilities ------------------
 
 def cartesian_to_longitude(x: float, y: float, z: float) -> float:
@@ -137,6 +154,29 @@ def resolve_fasting_days( *, tithi, paksha, masa, sun_lon ) -> list[dict]:
 
 # ------------------ response model ------------------
 
+
+class LunarInfoQuery(BaseModel):
+    date: str | None = Field(
+        default=None,
+        description="UTC date in YYYY-MM-DD"
+    )
+
+    @field_validator("date")
+    @classmethod
+    def validate_date(cls, v: str | None) -> str | None:
+        if v is None:
+            return v
+        try:
+            datetime.strptime(v, "%Y-%m-%d")
+        except ValueError:
+            raise HTTPException(
+                status_code=400,
+                detail="Invalid date format, expected YYYY-MM-DD"
+            )
+            # raise ValueError("Invalid date format, expected YYYY-MM-DD")
+        return v
+
+
 class FastingInfo(BaseModel):
     name: str
     description: str
@@ -224,22 +264,14 @@ def index():
     response_model=LunarResponse,
     status_code=200
 )
+@limiter.limit("120/minute")
 def lunar_angle(
-    date: str = Query(
-        default=None,
-        description="UTC date in YYYY-MM-DD"
-    )
+    request: Request,
+    query: LunarInfoQuery = Depends()
 ):
+    date = query.date
     if date is None:
         date = datetime.now(timezone.utc).strftime("%Y-%m-%d")
-
-    try:
-        datetime.strptime(date, "%Y-%m-%d")
-    except ValueError:
-        raise HTTPException(
-            status_code=400,
-            detail="Invalid date format, expected YYYY-MM-DD"
-        )
 
     if date in cache:
         return cache[date]
