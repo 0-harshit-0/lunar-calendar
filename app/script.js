@@ -1,5 +1,7 @@
+import { openSpace, closeSpace, init as spaceInit } from "./space_canvas.js";
+
 // initial load
-(async function init() {
+(async function () {
   // copy coordinates buttons
   document.querySelectorAll('.copy-coords').forEach(btn => {
     btn.addEventListener('click', async (e) => {
@@ -35,8 +37,9 @@
       return;
     }
     const data = await fetchPlanetsForDate(iso);
+    
     openSpace();
-    planetsDraw(data);
+    spaceInit(data);
   });
 
   window.addEventListener("keydown", (e) => {
@@ -50,6 +53,6 @@
   const today = new Date().toISOString().slice(0, 10);
   dateInput.value = today;
   displayDate.textContent = today;
-  // const data = await fetchForDate(today);
-  // canvasDraw(data);
+  const data = await fetchForDate(today);
+  canvasDraw(data);
 })();
