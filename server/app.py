@@ -314,10 +314,10 @@ def lunar_angle(
 
 
 # Mapping of names to NASA Horizons IDs
-# 10=Sun, 199=Mercury, 299=Venus, 301=Moon, 499=Mars, 599=Jupiter, 699=Saturn, 799=Uranus, 899=Neptune
+# 10=Sun, 199=Mercury, 299=Venus, 301=Moon, 499=Mars, 599=Jupiter, 699=Saturn, 799=Uranus, 899=Neptune, 399=Earth
 PLANET_MAP = {
     "Sun": "10",
-    "Moon": "301",
+    "Earth": "399",
     "Mercury": "199",
     "Venus": "299",
     "Mars": "499",
