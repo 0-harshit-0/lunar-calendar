@@ -1,24 +1,24 @@
-const LS_KEY = 'lunarCache';
-const MAX_CACHE_DAYS = 10;
-function loadCache() {
+const MAX_CACHE_DAYS = 3;
+
+function loadCache(key) {
   try {
-    return JSON.parse(localStorage.getItem(LS_KEY)) || {};
+    return JSON.parse(localStorage.getItem(key)) || {};
   } catch {
     return {};
   }
 }
 
-function saveCache(cache) {
-  localStorage.setItem(LS_KEY, JSON.stringify(cache));
+function saveCache(key, cache) {
+  localStorage.setItem(key, JSON.stringify(cache));
 }
 
-function getCachedDate(date) {
-  const cache = loadCache();
+function getCachedDate(key, date) {
+  const cache = loadCache(key);
   return cache[date] || null;
 }
 
-function setCachedDate(date, data) {
-  const cache = loadCache();
+function setCachedDate(key, date, data) {
+  const cache = loadCache(key);
 
   // insert or update
   cache[date] = {
@@ -26,7 +26,7 @@ function setCachedDate(date, data) {
     storedAt: Date.now()
   };
 
-  // enforce max 10 days
+  // enforce max days
   const entries = Object.entries(cache)
     .sort((a, b) => a[1].storedAt - b[1].storedAt);
 
@@ -35,5 +35,5 @@ function setCachedDate(date, data) {
     delete cache[oldestKey];
   }
 
-  saveCache(cache);
+  saveCache(key, cache);
 }
