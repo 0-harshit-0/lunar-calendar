@@ -28,15 +28,23 @@
     canvasDraw(data);
   });
 
-  calendar_canvas.addEventListener('dblclick', async (e) => {
+  calendarCanvas.addEventListener('dblclick', async (e) => {
     const data = await fetchPlanets();
+    openSpace();
     planetsDraw(data);
   });
+
+  window.addEventListener("keydown", (e) => {
+    console.log(e.key)
+    if (e.key == "Escape") {
+      closeSpace();
+    }
+  })
 
   dateInput.setAttribute('aria-label', 'Select date for lunar snapshot');
   const today = new Date().toISOString().slice(0, 10);
   dateInput.value = today;
   displayDate.textContent = today;
-  const data = await fetchForDate(today);
-  canvasDraw(data);
+  // const data = await fetchForDate(today);
+  // canvasDraw(data);
 })();

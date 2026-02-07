@@ -42,3 +42,13 @@ async function fetchForDate(isoDate) {
     fetchBtn.disabled = false;
   }
 }
+
+async function fetchPlanets() {
+  try {
+    console.log(2)
+  } catch (err) {
+    console.error(err);
+    return null;
+  } finally {
+  }
+}

@@ -8,21 +8,21 @@ function canvasDraw(data) {
   const sunLongitudeDeg = data.surya_longitude_deg;
   const moonLongitudeDeg = data.chandra_longitude_deg;
 
-  const ctx = calendar_canvas.getContext('2d');
-  const rect = calendar_canvas.getBoundingClientRect();
+  const ctx = calendarCanvas.getContext('2d');
+  const rect = calendarCanvas.getBoundingClientRect();
 
-  calendar_canvas.width = Math.round(rect.width * dpr);
-  calendar_canvas.height = Math.round(rect.height * dpr);
+  calendarCanvas.width = Math.round(rect.width * dpr);
+  calendarCanvas.height = Math.round(rect.height * dpr);
 
-  const cx = calendar_canvas.width / 2;
-  const cy = calendar_canvas.height / 2;
+  const cx = calendarCanvas.width / 2;
+  const cy = calendarCanvas.height / 2;
 
   // Visual scale (purely illustrative)
   const sunRadius = 90;
   const moonRadius = 65;
 
-  // Convert degrees to calendar_canvas angle
-  // calendar_canvas: 0 rad = right, positive clockwise
+  // Convert degrees to calendarCanvas angle
+  // calendarCanvas: 0 rad = right, positive clockwise
   // Astronomy: 0° = Aries direction, counter-clockwise
   function toCanvasAngle(deg) {
     return (deg - 90) * Math.PI / 180;
@@ -36,7 +36,7 @@ function canvasDraw(data) {
   }
 
   // Clear
-  ctx.clearRect(0, 0, calendar_canvas.width, calendar_canvas.height);
+  ctx.clearRect(0, 0, calendarCanvas.width, calendarCanvas.height);
 
   // Draw reference circle (ecliptic)
   ctx.beginPath();

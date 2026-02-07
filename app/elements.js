@@ -22,5 +22,5 @@ const longAngleEl = document.getElementById('longAngle');
 const sunXYZPre = document.getElementById('sunXYZ');
 const moonXYZPre = document.getElementById('moonXYZ');
 
-const calendar_canvas = document.getElementById('skyCanvas');
-const space_canvas = document.querySelector("#spaceCanvas");
+const calendarCanvas = document.getElementById('skyCanvas');
+const spaceCanvas = document.querySelector("#spaceCanvas");
