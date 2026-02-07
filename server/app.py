@@ -154,7 +154,6 @@ def resolve_fasting_days( *, tithi, paksha, masa, sun_lon ) -> list[dict]:
 
 # ------------------ response model ------------------
 
-
 class LunarInfoQuery(BaseModel):
     date: str | None = Field(
         default=None,
@@ -175,7 +174,6 @@ class LunarInfoQuery(BaseModel):
             )
             # raise ValueError("Invalid date format, expected YYYY-MM-DD")
         return v
-
 
 class FastingInfo(BaseModel):
     name: str
@@ -203,6 +201,15 @@ class LunarResponse(BaseModel):
 
     fasting_days: list[FastingInfo]
 
+
+class PlanetCoordinate(BaseModel):
+    name: str
+    xyz: Tuple[float, float, float]
+    longitude_deg: float
+
+class PlanetsResponse(BaseModel):
+    date: str
+    planets: list[PlanetCoordinate]
 
 # ------------------ core service ------------------
 
@@ -253,6 +260,23 @@ def compute_ephemeris(date: str) -> Dict:
     }
 
 
+def compute_all_planets(date: str) -> Dict:
+    planet_data = []
+    
+    for name, cmd in PLANET_MAP.items():
+        xyz = get_horizons_xyz(cmd, date)
+        lon = cartesian_to_longitude(*xyz)
+        planet_data.append({
+            "name": name,
+            "xyz": xyz,
+            "longitude_deg": round(lon, 4)
+        })
+    
+    return {
+        "date": date,
+        "planets": planet_data
+    }
+    
 # ------------------ API ------------------
 
 @app.get("/")
@@ -285,5 +309,46 @@ def lunar_angle(
 
     insert_row(data)
     cache[date] = data
+
+    return data
+
+
+# Mapping of names to NASA Horizons IDs
+# 10=Sun, 199=Mercury, 299=Venus, 301=Moon, 499=Mars, 599=Jupiter, 699=Saturn, 799=Uranus, 899=Neptune
+PLANET_MAP = {
+    "Sun": "10",
+    "Moon": "301",
+    "Mercury": "199",
+    "Venus": "299",
+    "Mars": "499",
+    "Jupiter": "599",
+    "Saturn": "699",
+    "Uranus": "799",
+    "Neptune": "899"
+}
+
+@app.get(
+    "/planets",
+    # response_model=PlanetsResponse, # Uncomment if you want strict validation
+    status_code=200
+)
+@limiter.limit("120/minute")
+def get_planets(
+    request: Request,
+    query: LunarInfoQuery = Depends()
+):
+    date = query.date
+    if date is None:
+        date = datetime.now(timezone.utc).strftime("%Y-%m-%d")
+
+    # Use a specific prefix for planet cache to avoid collisions with /info
+    cache_key = f"planets_{date}"
+    
+    if cache_key in cache:
+        return cache[cache_key]
+
+    # No DB storage requested, just compute and cache
+    data = compute_all_planets(date)
+    cache[cache_key] = data
 
     return data
