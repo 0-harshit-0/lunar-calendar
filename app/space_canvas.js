@@ -7,6 +7,8 @@ function closeSpace() {
 	return 0;
 }
 
-function planetsDraw() {
+function planetsDraw(data) {
+	if (!data) return 0;
+
 	console.log(1)
 }

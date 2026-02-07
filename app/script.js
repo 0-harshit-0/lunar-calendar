@@ -29,7 +29,12 @@
   });
 
   calendarCanvas.addEventListener('dblclick', async (e) => {
-    const data = await fetchPlanets();
+    const iso = dateInput.value;
+    if (!iso) {
+      setStatus('Please choose a date', true);
+      return;
+    }
+    const data = await fetchPlanetsForDate(iso);
     openSpace();
     planetsDraw(data);
   });

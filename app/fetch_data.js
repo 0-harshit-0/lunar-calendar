@@ -1,4 +1,4 @@
-const API_BASE = 'https://lunar-calendar-laeb.onrender.com/info';
+const API_BASE = 'https://lunar-calendar-laeb.onrender.com';
 
 async function fetchForDate(isoDate) {
   setStatus('Loading data...');
@@ -6,7 +6,7 @@ async function fetchForDate(isoDate) {
 
   try {
     // 1. check localStorage cache
-    const cached = getCachedDate(isoDate);
+    const cached = getCachedDate('lunarCache', isoDate);
     if (cached) {
       // move the rendering part out and keep it only fetch
       renderData(cached.data);
@@ -16,7 +16,7 @@ async function fetchForDate(isoDate) {
     }
 
     // 2. fetch from API
-    const url = new URL(API_BASE);
+    const url = new URL(API_BASE+"/info");
     url.searchParams.set('date', isoDate);
 
     const res = await fetch(url.toString(), { cache: 'no-store' });
@@ -25,7 +25,7 @@ async function fetchForDate(isoDate) {
     const data = await res.json();
 
     // 3. store in cache
-    setCachedDate(isoDate, data);
+    setCachedDate('lunarCache', isoDate, data);
 
     renderData(data);
     setStatus('Data loaded');
@@ -43,12 +43,34 @@ async function fetchForDate(isoDate) {
   }
 }
 
-async function fetchPlanets() {
+async function fetchPlanetsForDate(isoDate) {
+  setStatus('Loading planets...');
+
   try {
-    console.log(2)
+    // 1. check cache
+    const cached = getCachedDate('planets', isoDate);
+    if (cached) {
+      setStatus('Planets loaded from cache');
+      return cached.data;
+    }
+
+    // 2. fetch from API
+    const url = new URL(API_BASE + '/planets');
+    url.searchParams.set('date', isoDate);
+
+    const res = await fetch(url.toString(), { cache: 'no-store' });
+    if (!res.ok) throw new Error('Network error ' + res.status);
+
+    const data = await res.json();
+
+    // 3. store in cache
+    setCachedDate('planets', isoDate, data);
+
+    setStatus('Planets loaded');
+    return data;
   } catch (err) {
     console.error(err);
+    setStatus('Could not fetch planets: ' + err.message, true);
     return null;
-  } finally {
   }
 }
