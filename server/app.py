@@ -64,11 +64,11 @@ def cartesian_to_longitude(x: float, y: float, z: float) -> float:
     return lon % 360
 
 
-def get_horizons_xyz(command: str, date: str) -> Tuple[float, float, float]:
+def get_horizons_xyz(command: str, date: str, center: str="399") -> Tuple[float, float, float]:
     params = {
         "format": "json",
         "COMMAND": f"'{command}'",
-        "CENTER": "'500@399'",
+        "CENTER": f"'500@{center}'",
         "EPHEM_TYPE": "'VECTORS'",
         "START_TIME": f"'{date} 00:00'",
         "STOP_TIME": f"'{date} 00:01'",
@@ -264,7 +264,7 @@ def compute_all_planets(date: str) -> Dict:
     planet_data = []
     
     for name, cmd in PLANET_MAP.items():
-        xyz = get_horizons_xyz(cmd, date)
+        xyz = get_horizons_xyz(cmd, date, "10")
         lon = cartesian_to_longitude(*xyz)
         planet_data.append({
             "name": name,
@@ -288,7 +288,7 @@ def index():
     response_model=LunarResponse,
     status_code=200
 )
-@limiter.limit("120/minute")
+@limiter.limit("60/minute")
 def lunar_angle(
     request: Request,
     query: LunarInfoQuery = Depends()
@@ -332,7 +332,7 @@ PLANET_MAP = {
     # response_model=PlanetsResponse, # Uncomment if you want strict validation
     status_code=200
 )
-@limiter.limit("120/minute")
+@limiter.limit("60/minute")
 def get_planets(
     request: Request,
     query: LunarInfoQuery = Depends()

@@ -43,7 +43,6 @@ import { openSpace, closeSpace, init as spaceInit } from "./space_canvas.js";
   });
 
   window.addEventListener("keydown", (e) => {
-    console.log(e.key)
     if (e.key == "Escape") {
       closeSpace();
     }
