@@ -10,7 +10,7 @@ import { ShaderPass } from 'https://cdn.jsdelivr.net/npm/three@0.160.0/examples/
 
 
 const BLOOM_LAYER = 1;
-const PLANET_POS_SCALE = 5e-7; //1e-6; //1e-7;
+const PLANET_POS_SCALE = 3e-7; //1e-6; //1e-7;
 const PLANET_RADIUS_SCALE = 5e-4;
 
 // Planetary mean radii in kilometers
@@ -65,12 +65,12 @@ spaceCanvas.height = innerHeight;
 // THREE.Object3D.DefaultUp = new THREE.Vector3(0, 0, 1);
 const scene = new THREE.Scene();
 // const light = new THREE.DirectionalLight('white', 1);
-const ambientLight = new THREE.AmbientLight(0x404040, 0.1);
+const ambientLight = new THREE.AmbientLight('white', 1);
 const camera = new THREE.PerspectiveCamera(
-  300, // fov
+  100, // fov
   window.innerWidth / window.innerHeight, // aspect
-  100, // near
-  6000 // far
+  10, // near
+  3000 // far
 );
 const renderer = new THREE.WebGLRenderer({ canvas: spaceCanvas, antialias: true });
 const controls = new OrbitControls(camera, spaceCanvas);
@@ -156,27 +156,48 @@ controls.target.set(0, 0, 0);
 // Planets Class
 
 class Planet {
-	constructor(id, name, x, y, z, r, c) {
+	constructor(id, name, x, y, z, r, c, distInfo) {
 		this.id = id;
 		this.name = name;
 
+		// const dir = new THREE.Vector3(x, y, z);
+		// const realDist = dir.length();
+		// console.log(realDist, dir, "dir")
+
+		// dir.normalize();
+		// const scaledDist = this.remapDistance(
+		// 	realDist,
+		// 	distInfo.min,
+		// 	distInfo.max
+		// );
+
+		// this.pos = dir.multiplyScalar(scaledDist);
+
 		this.pos = new THREE.Vector3(x, y, z);
-		this.radius = name == "Sun" ? 20 : r * PLANET_RADIUS_SCALE; //Math.min((r * PLANET_RADIUS_SCALE) > 20 ? (r * PLANET_RADIUS_SCALE)/2 : r * PLANET_RADIUS_SCALE, 20);
-		this.color = c;
-
-		this.geometry = new THREE.SphereGeometry( this.radius, 64, 64 );
-		this.material = new THREE.MeshStandardMaterial( {
-			color: this.color ?? 0xffff00,
-			// roughness: 1.0,
-			// metalness: 0.0
-		} );
-		this.mesh = new THREE.Mesh( this.geometry, this.material );
-
 		this.pos.multiplyScalar(PLANET_POS_SCALE);
-		this.mesh.position.copy(this.pos);
+		this.radius = Math.min((r * PLANET_RADIUS_SCALE) > 20 ? (r * PLANET_RADIUS_SCALE)/2 : r * PLANET_RADIUS_SCALE, 20);
+		this.color = c;
 	}
 	draw() {
+		this.geometry = new THREE.SphereGeometry( this.radius, 64, 64 );
+		this.material = new THREE.MeshStandardMaterial({
+			color: this.color ?? 0xffff00,
+			// roughness: 1.0,
+			metalness: 0.0
+		});
+
+		this.mesh = new THREE.Mesh( this.geometry, this.material );
+		this.mesh.position.copy(this.pos);
+
 		return this.mesh;
+	}
+	remapDistance(d, min, max, outMin = 100, outMax = 1500) {
+		const logMin = Math.log(min);
+		const logMax = Math.log(max);
+		const logD = Math.log(d);
+
+		const t = (logD - logMin) / (logMax - logMin);
+		return outMin + t * (outMax - outMin);
 	}
 	info() {
 		return this;
@@ -184,16 +205,40 @@ class Planet {
 }
 
 class Sun extends Planet {
-	constructor(id, name, x,y,z, r, c) {
-		super(id, name, x,y,z, r, c);
+	constructor(id, name, x,y,z, r, c, distInfo) {
+		super(id, name, x,y,z, r, c, distInfo);
 
-		this.mesh.material.emissive = new THREE.Color(c);
+		this.pos = new THREE.Vector3(0,0,0);
+		this.radius = 20; //Math.min((r * PLANET_RADIUS_SCALE) > 20 ? (r * PLANET_RADIUS_SCALE)/2 : r * PLANET_RADIUS_SCALE, 20);
+	}
+	draw() {
+		super.draw();
+
+		this.mesh.material.emissive = new THREE.Color(this.c);
 		this.mesh.material.emissiveIntensity = 1;
 
-		this.light = new THREE.PointLight(0xffffff, 300000, 0);
+		this.light = new THREE.PointLight(0xffffff, 300000);
 		this.light.castShadow = true;
 		this.mesh.add(this.light);
 		this.mesh.layers.enable(BLOOM_LAYER);
+
+		return this.mesh;
+	}
+	static computeDistanceStats(planets) {
+		let min = Infinity;
+		let max = 0;
+
+		planets.forEach(p => {
+			if (p.name === "Sun") return;
+
+			const d = new THREE.Vector3(...p.xyz).length();
+			p._dist = d;
+
+			min = Math.min(min, d);
+			max = Math.max(max, d);
+		});
+
+		return { min, max };
 	}
 }
 
@@ -205,18 +250,29 @@ const planetsMesh = [];
 function planetsDraw(data) {
 	if (!data) return 0;
 
+	const distInfo = Sun.computeDistanceStats(data.planets);
+
 	data.planets.forEach((z, i) => {
-		if(PlanetRadiiKM.get(z.name)) {
-			let planet;
-			if (z.name == "Sun") {
-				planet = new Sun(i, z.name, ...z.xyz, PlanetRadiiKM.get(z.name), new THREE.Color(PlanetColors.get(z.name)));
-			}else {
-				planet = new Planet(i, z.name, ...z.xyz, PlanetRadiiKM.get(z.name), new THREE.Color(PlanetColors.get(z.name)));
-			}
-			console.log(planet.pos, planet.name)
-			planetsMesh.push(planet.draw());
+		if (!PlanetRadiiKM.get(z.name)) return;
+
+		let planet;
+
+		if (z.name == "Sun") {
+			planet = new Sun(i, z.name, ...z.xyz, PlanetRadiiKM.get(z.name), new THREE.Color(PlanetColors.get(z.name)), { min: 0, max: 0 });
+		}else {
+			planet = new Planet(
+				i,
+				z.name,
+				...z.xyz,
+				PlanetRadiiKM.get(z.name),
+				new THREE.Color(PlanetColors.get(z.name)),
+				distInfo
+			);
 		}
-	})
+
+			console.log(planet.pos, planet.name)
+		planetsMesh.push(planet.draw());
+	});
 
 }
 

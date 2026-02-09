@@ -90,7 +90,7 @@ def get_by_date(date: str):
 
         # normalize fasting_days JSON -> list
         raw = row.get("fasting_days")
-        print("raw", raw)
+        # print("raw", raw)
         if raw is None or raw == "null":
             return None
             # row["fasting_days"] = []
