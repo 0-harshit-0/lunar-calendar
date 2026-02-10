@@ -10,31 +10,31 @@ import { ShaderPass } from 'https://cdn.jsdelivr.net/npm/three@0.160.0/examples/
 
 
 const BLOOM_LAYER = 1;
-const PLANET_POS_SCALE = 3e-7; //1e-6; //1e-7;
-const PLANET_RADIUS_SCALE = 5e-4;
+const PLANET_POS_SCALE = 5e-7; //1e-6; //1e-7;
+const PLANET_RADIUS_SCALE = 3e-4;
 
 // Planetary mean radii in kilometers
 const PlanetRadiiKM = new Map([
 	["Sun", 696340],
 	["Mercury", 2439.7],
-  	["Venus", 6051.8],
+	["Venus", 6051.8],
 	["Earth", 6371.0],
-  	["Mars", 3389.5],
-  	["Jupiter", 69911],
-  	["Saturn", 58232],
-  	["Uranus", 25362],
-  	["Neptune", 24622]
+	["Mars", 3389.5],
+	["Jupiter", 69911],
+	["Saturn", 58232],
+	["Uranus", 25362],
+	["Neptune", 24622]
 ]);
 const PlanetColors = new Map([
   ["Sun", 0xffffff],      // 0xffcc33 yellow-orange
-  ["Mercury", 0x8c8c8c],  // dark gray
-  ["Venus", 0xe6c27a],    // pale yellow
-  ["Earth", 0x2a6bd4],    // blue
-  ["Mars", 0xb5533c],    // red-orange
-  ["Jupiter", 0xd2b48c], // tan
-  ["Saturn", 0xf5deb3],  // light beige
-  ["Uranus", 0x7fffd4],  // cyan
-  ["Neptune", 0x4169e1]  // deep blue
+  ["Mercury", 0xbdbdbd], // bright warm gray
+  ["Venus",   0xffd54f], // golden yellow
+  ["Earth",   0x2196f3], // vivid blue
+  ["Mars",    0xff5722], // bright red-orange
+  ["Jupiter", 0xffcc80], // warm orange-beige
+  ["Saturn",  0xffe082], // pale gold
+  ["Uranus",  0x4dd0e1], // bright cyan
+  ["Neptune", 0x2962ff]  // electric deep blue
 ]);
 
 
@@ -65,7 +65,7 @@ spaceCanvas.height = innerHeight;
 // THREE.Object3D.DefaultUp = new THREE.Vector3(0, 0, 1);
 const scene = new THREE.Scene();
 // const light = new THREE.DirectionalLight('white', 1);
-const ambientLight = new THREE.AmbientLight('white', 1);
+// const ambientLight = new THREE.AmbientLight('white', 1);
 const camera = new THREE.PerspectiveCamera(
   100, // fov
   window.innerWidth / window.innerHeight, // aspect
@@ -124,29 +124,19 @@ bloomPass.threshold = 0.9;
 
 scene.background = new THREE.Color('black');
 
-// light.position.set(0, 30, 100);
-// light.target.position.set(0, 2, 0);
-// light.castShadow = true;
-// // if bigger size
-// light.shadow.mapSize.width = 2048;
-// light.shadow.mapSize.height = 2048;
-
-// light.shadow.camera.near = 1;
-// light.shadow.camera.far = 500;
-
-// light.shadow.camera.left = -100;
-// light.shadow.camera.right = 100;
-// light.shadow.camera.top = 100;
-// light.shadow.camera.bottom = -100;
 
 // camera.up.set(0, 0, 1);
 camera.position.set(0, 0, 100);
 // camera.lookAt(0, 300, 0);
 
 renderer.setSize(window.innerWidth, window.innerHeight);
-renderer.shadowMap.enabled = true;
-renderer.shadowMap.type = THREE.PCFSoftShadowMap; // Softer shadows
+renderer.shadowMap.enabled = false;
+// renderer.shadowMap.type = THREE.PCFSoftShadowMap; // Softer shadows
 renderer.physicallyCorrectLights = false;
+
+bloomComposer.setSize(window.innerWidth, window.innerHeight);
+finalComposer.setSize(window.innerWidth, window.innerHeight);
+
 
 // document.body.appendChild(renderer.domElement);
 
@@ -179,11 +169,11 @@ class Planet {
 		this.color = c;
 	}
 	draw() {
-		this.geometry = new THREE.SphereGeometry( this.radius, 64, 64 );
-		this.material = new THREE.MeshStandardMaterial({
+		this.geometry = new THREE.SphereGeometry( this.radius, 128, 128 );
+		this.material = new THREE.MeshBasicMaterial({
 			color: this.color ?? 0xffff00,
 			// roughness: 1.0,
-			metalness: 0.0
+			// metalness: 0.0
 		});
 
 		this.mesh = new THREE.Mesh( this.geometry, this.material );
@@ -209,18 +199,19 @@ class Sun extends Planet {
 		super(id, name, x,y,z, r, c, distInfo);
 
 		this.pos = new THREE.Vector3(0,0,0);
-		this.radius = 20; //Math.min((r * PLANET_RADIUS_SCALE) > 20 ? (r * PLANET_RADIUS_SCALE)/2 : r * PLANET_RADIUS_SCALE, 20);
+		console.log(r * PLANET_RADIUS_SCALE)
+		this.radius = 15; //Math.min((r * PLANET_RADIUS_SCALE) > 20 ? (r * PLANET_RADIUS_SCALE)/2 : r * PLANET_RADIUS_SCALE, 20);
 	}
 	draw() {
 		super.draw();
 
-		this.mesh.material.emissive = new THREE.Color(this.c);
-		this.mesh.material.emissiveIntensity = 1;
-
-		this.light = new THREE.PointLight(0xffffff, 300000);
-		this.light.castShadow = true;
-		this.mesh.add(this.light);
+		// this.mesh.material.emissive = new THREE.Color(this.color);
+		// this.mesh.material.emissiveIntensity = 1;
 		this.mesh.layers.enable(BLOOM_LAYER);
+
+		// this.light = new THREE.PointLight(0xffffff, 300000);
+		// this.light.castShadow = true;
+		// this.mesh.add(this.light);
 
 		return this.mesh;
 	}
@@ -302,7 +293,7 @@ export function init(data) {
 	planetsDraw(data);
 	console.log(data, planetsMesh)
 
-	scene.add(ambientLight);
+	// scene.add(ambientLight);
 	// scene.add(light);
 	// scene.add(light.target);
 	scene.add(camera);
