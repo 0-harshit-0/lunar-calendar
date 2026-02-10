@@ -11,14 +11,26 @@ Key highlights:
 - Simple UI focused on clarity, engagement, and usability
 
 
-# API
+## API
 You can try out the API live at: https://lunar-calendar-laeb.onrender.com/docs
 
 - It is using the free render service; wait for a few minutes if it's not active.
-- Rate limit: 120 requests per minute.
+- Rate limit: 60 requests per minute per IP.
 
 
-# Read
+## Technical Implementation
+- NASA Horizons API integration and response parsing
+- TTL-based caching to optimize performance
+- Database persistence for computed results
+- Per-IP rate limiting for fair usage
+- Robust error handling and input validation
+- Client-side caching using localStorage with eviction policy
+- Graceful handling of network failures and invalid responses
+- UTC-based date validation and defaults
+- Extensible support for multi-planet ephemeris and visualization
+
+
+## Read
 - https://en.wikipedia.org/wiki/Tithi
 - https://www.quora.com/What-is-the-difference-between-a-tithi-and-a-day-according-to-the-Hindu-calendar
 - https://ssd-api.jpl.nasa.gov/doc/horizons.html
