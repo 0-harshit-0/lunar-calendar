@@ -199,7 +199,7 @@ class Sun extends Planet {
 		super(id, name, x,y,z, r, c, distInfo);
 
 		this.pos = new THREE.Vector3(0,0,0);
-		console.log(r * PLANET_RADIUS_SCALE)
+		// console.log(r * PLANET_RADIUS_SCALE)
 		this.radius = 15; //Math.min((r * PLANET_RADIUS_SCALE) > 20 ? (r * PLANET_RADIUS_SCALE)/2 : r * PLANET_RADIUS_SCALE, 20);
 	}
 	draw() {
@@ -291,7 +291,7 @@ function animate() {
 export function init(data) {
 	if (!data) return 0;
 	planetsDraw(data);
-	console.log(data, planetsMesh)
+	// console.log(data, planetsMesh)
 
 	// scene.add(ambientLight);
 	// scene.add(light);
