@@ -8,6 +8,8 @@ import { ShaderPass } from 'https://cdn.jsdelivr.net/npm/three@0.160.0/examples/
 
 
 
+const spaceCanvas = document.querySelector('#spaceCanvas');
+let renderAnimationID = null;
 
 const BLOOM_LAYER = 1;
 const PLANET_POS_SCALE = 5e-7; //1e-6; //1e-7;
@@ -38,7 +40,6 @@ const PlanetColors = new Map([
 ]);
 
 
-let renderAnimationID = null;
 
 
 export function openSpace() {
@@ -52,14 +53,6 @@ export function closeSpace() {
 	spaceCanvas.style.display = "none";
 	return 0;
 }
-
-
-
-
-// spaceCanvas
-const spaceCanvas = document.querySelector('#spaceCanvas');
-spaceCanvas.width = innerWidth;
-spaceCanvas.height = innerHeight;
 
 
 // THREE.Object3D.DefaultUp = new THREE.Vector3(0, 0, 1);
@@ -169,7 +162,7 @@ class Planet {
 		this.color = c;
 	}
 	draw() {
-		this.geometry = new THREE.SphereGeometry( this.radius, 128, 128 );
+		this.geometry = new THREE.SphereGeometry( this.radius, 64, 64 );
 		this.material = new THREE.MeshBasicMaterial({
 			color: this.color ?? 0xffff00,
 			// roughness: 1.0,
@@ -264,10 +257,7 @@ function planetsDraw(data) {
 			console.log(planet.pos, planet.name)
 		planetsMesh.push(planet.draw());
 	});
-
 }
-
-
 
 function renderFun() {
   // console.log('r');
@@ -286,19 +276,49 @@ function animate() {
 	renderAnimationID = requestAnimationFrame(animate);
 }
 
+function onResize() {
+  const width = window.innerWidth;
+  const height = window.innerHeight;
+
+  camera.aspect = width / height;
+  camera.updateProjectionMatrix();
+
+  renderer.setSize(width, height);
+  bloomComposer.setSize(width, height);
+  finalComposer.setSize(width, height);
+}
+
+
 
 // lights, camera, controls setup ======================
-export function init(data) {
-	if (!data) return 0;
-	planetsDraw(data);
 	// console.log(data, planetsMesh)
 
 	// scene.add(ambientLight);
 	// scene.add(light);
 	// scene.add(light.target);
-	scene.add(camera);
-	planetsMesh.forEach(z => scene.add(z));
-	controls.update();
+export function init(data) {
+  if (!data) return 0;
 
-	animate();
+  planetsMesh.forEach(mesh => scene.remove(mesh));
+  planetsMesh.length = 0;
+
+  planetsDraw(data);
+  planetsMesh.forEach(z => scene.add(z));
+
+	scene.add(camera);
+  controls.update();
+
+  animate();
 }
+
+
+window.addEventListener('resize', onResize);
+
+renderer.domElement.addEventListener('webglcontextlost', (e) => {
+  e.preventDefault();
+  console.log('WebGL context lost');
+});
+
+renderer.domElement.addEventListener('webglcontextrestored', () => {
+  console.log('WebGL context restored');
+});
