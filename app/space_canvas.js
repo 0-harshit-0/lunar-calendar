@@ -123,6 +123,7 @@ camera.position.set(0, 0, 100);
 // camera.lookAt(0, 300, 0);
 
 renderer.setSize(window.innerWidth, window.innerHeight);
+renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
 renderer.shadowMap.enabled = false;
 // renderer.shadowMap.type = THREE.PCFSoftShadowMap; // Softer shadows
 renderer.physicallyCorrectLights = false;
@@ -282,6 +283,9 @@ function onResize() {
 
   camera.aspect = width / height;
   camera.updateProjectionMatrix();
+
+  const pixelRatio = Math.min(window.devicePixelRatio, 2);
+  renderer.setPixelRatio(pixelRatio);
 
   renderer.setSize(width, height);
   bloomComposer.setSize(width, height);
