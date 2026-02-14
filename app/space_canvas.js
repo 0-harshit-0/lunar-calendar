@@ -62,7 +62,7 @@ const scene = new THREE.Scene();
 const camera = new THREE.PerspectiveCamera(
   100, // fov
   window.innerWidth / window.innerHeight, // aspect
-  10, // near
+  0.1, // near
   3000 // far
 );
 const renderer = new THREE.WebGLRenderer({ canvas: spaceCanvas, antialias: true });
