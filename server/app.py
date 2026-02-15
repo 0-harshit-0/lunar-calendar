@@ -15,7 +15,7 @@ from fastapi.responses import JSONResponse
 from pydantic import BaseModel, Field, field_validator
 from cachetools import TTLCache
 
-from tithi import TITHIs, MASAs, RASHIs, FASTING_DAYS, Ayana, Ritu
+from tithi import TITHIs, MASAs, RASHIs, UPAVAAS, Ayana, Ritu
 from db import get_by_date, insert_row, start_tunnel, stop_tunnel, close_connection
 
 
@@ -122,11 +122,11 @@ def get_ritu_from_longitude(lon: float) -> Ritu:
     return Ritu.SHISHIRA
 
 
-def resolve_fasting_days( *, tithi, paksha, masa, sun_lon ) -> list[dict]:
+def resolve_upavaas( *, tithi, paksha, masa, sun_lon ) -> list[dict]:
 
     results: list[dict] = []
 
-    for fd in FASTING_DAYS:
+    for fd in UPAVAAS:
 
         # --- tithi based ---
         if fd.tithi_name and fd.tithi_name != tithi.name:
@@ -139,7 +139,7 @@ def resolve_fasting_days( *, tithi, paksha, masa, sun_lon ) -> list[dict]:
             continue
 
         # --- solar based ---
-        if fd.fasting_type.name == "SOLAR_BASED":
+        if fd.upavaas_type.name == "SOLAR_BASED":
             if "Makara" in fd.name:
                 if not (270 <= sun_lon < 300):
                     continue
@@ -199,7 +199,7 @@ class LunarResponse(BaseModel):
     surya_xyz: Tuple[float, float, float]
     chandra_xyz: Tuple[float, float, float]
 
-    fasting_days: list[FastingInfo]
+    upavaas: list[FastingInfo]
 
 
 class PlanetCoordinate(BaseModel):
@@ -234,7 +234,7 @@ def compute_ephemeris(date: str) -> Dict:
         else Ayana.DAKSHINAYANA
     )
 
-    fasting_days = resolve_fasting_days(
+    upavaas = resolve_upavaas(
         tithi=tithi,
         paksha=tithi.paksha,
         masa=masa,
@@ -256,7 +256,7 @@ def compute_ephemeris(date: str) -> Dict:
         "longitudinal_angle_deg": angle,
         "surya_xyz": sun_xyz,
         "chandra_xyz": moon_xyz,
-        "fasting_days": fasting_days,
+        "upavaas": upavaas,
     }
 
 

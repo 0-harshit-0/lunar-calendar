@@ -3,7 +3,7 @@ from dataclasses import dataclass
 from typing import List, Optional
 
 
-class FastingType(Enum):
+class UpavaasType(Enum):
     TITHI_BASED = "Tithi-based (Moon–Sun)"
     SOLAR_BASED = "Solar (Sun longitude)"
     MIXED_TIME_RULE = "Tithi with time rule"
@@ -49,7 +49,7 @@ class Paksha(Enum):
     KRISHNA = "Krishna Paksha"
 
 
-class TithiName(Enum):
+class Tithi(Enum):
     PRATIPADA = "Pratipada"
     DWITIYA = "Dwitiya"
     TRITIYA = "Tritiya"
@@ -81,13 +81,13 @@ class Ritu(Enum):
 class Tithi:
     paksha: Paksha
     index: int
-    name: TithiName
+    name: Tithi
 
 @dataclass(frozen=True)
-class FastingDay:
+class Upavaas:
     name: str
-    fasting_type: FastingType
-    tithi_name: Optional[TithiName] = None
+    upavaas_type: UpavaasType
+    tithi: Optional[Tithi] = None
     paksha: Optional[Paksha] = None
     masa: Optional[Masa] = None
     description: str = ""
@@ -97,41 +97,41 @@ TITHIs: List[Tithi] = [
     *[
         Tithi(Paksha.SHUKLA, i + 1, name)
         for i, name in enumerate([
-            TithiName.PRATIPADA,
-            TithiName.DWITIYA,
-            TithiName.TRITIYA,
-            TithiName.CHATURTHI,
-            TithiName.PANCHAMI,
-            TithiName.SHASHTHI,
-            TithiName.SAPTAMI,
-            TithiName.ASHTAMI,
-            TithiName.NAVAMI,
-            TithiName.DASHAMI,
-            TithiName.EKADASHI,
-            TithiName.DWADASHI,
-            TithiName.TRAYODASHI,
-            TithiName.CHATURDASHI,
-            TithiName.PURNIMA,
+            Tithi.PRATIPADA,
+            Tithi.DWITIYA,
+            Tithi.TRITIYA,
+            Tithi.CHATURTHI,
+            Tithi.PANCHAMI,
+            Tithi.SHASHTHI,
+            Tithi.SAPTAMI,
+            Tithi.ASHTAMI,
+            Tithi.NAVAMI,
+            Tithi.DASHAMI,
+            Tithi.EKADASHI,
+            Tithi.DWADASHI,
+            Tithi.TRAYODASHI,
+            Tithi.CHATURDASHI,
+            Tithi.PURNIMA,
         ])
     ],
     *[
         Tithi(Paksha.KRISHNA, i + 1, name)
         for i, name in enumerate([
-            TithiName.PRATIPADA,
-            TithiName.DWITIYA,
-            TithiName.TRITIYA,
-            TithiName.CHATURTHI,
-            TithiName.PANCHAMI,
-            TithiName.SHASHTHI,
-            TithiName.SAPTAMI,
-            TithiName.ASHTAMI,
-            TithiName.NAVAMI,
-            TithiName.DASHAMI,
-            TithiName.EKADASHI,
-            TithiName.DWADASHI,
-            TithiName.TRAYODASHI,
-            TithiName.CHATURDASHI,
-            TithiName.AMAVASYA,
+            Tithi.PRATIPADA,
+            Tithi.DWITIYA,
+            Tithi.TRITIYA,
+            Tithi.CHATURTHI,
+            Tithi.PANCHAMI,
+            Tithi.SHASHTHI,
+            Tithi.SAPTAMI,
+            Tithi.ASHTAMI,
+            Tithi.NAVAMI,
+            Tithi.DASHAMI,
+            Tithi.EKADASHI,
+            Tithi.DWADASHI,
+            Tithi.TRAYODASHI,
+            Tithi.CHATURDASHI,
+            Tithi.AMAVASYA,
         ])
     ],
 ]
@@ -163,102 +163,102 @@ RASHIs: list[Rashi] = [
     Rashi.KUMBHA,
     Rashi.MEENA,
 ]
-FASTING_DAYS: List[FastingDay] = [
+UPAVAASs: List[Upavaas] = [
     # --- Ekadashi ---
-    FastingDay(
+    Upavaas(
         name="Ekadashi",
-        fasting_type=FastingType.MIXED_TIME_RULE,
-        tithi_name=TithiName.EKADASHI,
+        upavaas=UpavaasType.MIXED_TIME_RULE,
+        tithi=Tithi.EKADASHI,
         description="Observed on the 11th lunar tithi when it prevails at local sunrise."
     ),
 
     # --- Pradosha ---
-    FastingDay(
+    Upavaas(
         name="Pradosha",
-        fasting_type=FastingType.MIXED_TIME_RULE,
-        tithi_name=TithiName.TRAYODASHI,
+        upavaas=UpavaasType.MIXED_TIME_RULE,
+        tithi=Tithi.TRAYODASHI,
         description="Observed on the 13th tithi during the evening twilight period."
     ),
 
     # --- Maha Shivaratri ---
-    FastingDay(
+    Upavaas(
         name="Maha Shivaratri",
-        fasting_type=FastingType.MIXED_TIME_RULE,
-        tithi_name=TithiName.CHATURDASHI,
+        upavaas=UpavaasType.MIXED_TIME_RULE,
+        tithi=Tithi.CHATURDASHI,
         paksha=Paksha.KRISHNA,
         masa=Masa.MAGHA,
         description="Krishna Paksha Chaturdashi of Magha, observed mainly during night."
     ),
 
     # --- Amavasya ---
-    FastingDay(
+    Upavaas(
         name="Amavasya",
-        fasting_type=FastingType.TITHI_BASED,
-        tithi_name=TithiName.AMAVASYA,
+        upavaas=UpavaasType.TITHI_BASED,
+        tithi=Tithi.AMAVASYA,
         description="Observed on the new moon when Moon–Sun longitude difference reaches 360°."
     ),
 
     # --- Purnima ---
-    FastingDay(
+    Upavaas(
         name="Purnima",
-        fasting_type=FastingType.TITHI_BASED,
-        tithi_name=TithiName.PURNIMA,
+        upavaas=UpavaasType.TITHI_BASED,
+        tithi=Tithi.PURNIMA,
         description="Observed on the full moon when Moon–Sun longitude difference reaches 180°."
     ),
 
     # --- Sankashti Chaturthi ---
-    FastingDay(
+    Upavaas(
         name="Sankashti Chaturthi",
-        fasting_type=FastingType.TITHI_BASED,
-        tithi_name=TithiName.CHATURTHI,
+        upavaas=UpavaasType.TITHI_BASED,
+        tithi=Tithi.CHATURTHI,
         paksha=Paksha.KRISHNA,
         description="Krishna Paksha Chaturthi dedicated to Ganesha, observed till moonrise."
     ),
 
     # --- Vinayaka Chaturthi ---
-    FastingDay(
+    Upavaas(
         name="Vinayaka Chaturthi",
-        fasting_type=FastingType.TITHI_BASED,
-        tithi_name=TithiName.CHATURTHI,
+        upavaas=UpavaasType.TITHI_BASED,
+        tithi=Tithi.CHATURTHI,
         paksha=Paksha.SHUKLA,
         description="Shukla Paksha Chaturthi dedicated to Ganesha."
     ),
 
     # --- Ashtami ---
-    FastingDay(
+    Upavaas(
         name="Ashtami",
-        fasting_type=FastingType.TITHI_BASED,
-        tithi_name=TithiName.ASHTAMI,
+        upavaas=UpavaasType.TITHI_BASED,
+        tithi=Tithi.ASHTAMI,
         description="Observed on the 8th lunar tithi, commonly associated with Devi worship."
     ),
 
     # --- Navami ---
-    FastingDay(
+    Upavaas(
         name="Navami",
-        fasting_type=FastingType.TITHI_BASED,
-        tithi_name=TithiName.NAVAMI,
+        upavaas=UpavaasType.TITHI_BASED,
+        tithi=Tithi.NAVAMI,
         description="Observed on the 9th lunar tithi, notably during Navaratri."
     ),
 
     # --- Dwadashi ---
-    FastingDay(
+    Upavaas(
         name="Dwadashi",
-        fasting_type=FastingType.TITHI_BASED,
-        tithi_name=TithiName.DWADASHI,
+        upavaas=UpavaasType.TITHI_BASED,
+        tithi=Tithi.DWADASHI,
         description="Observed on the 12th tithi, often marking the breaking of Ekadashi fast."
     ),
 
     # # --- Sankranti ---
-    # FastingDay(
+    # Upavaas(
     #     name="Sankranti",
-    #     fasting_type=FastingType.SOLAR_BASED,
+    #     upavaas=UpavaasType.SOLAR_BASED,
     #     description="Observed when the Sun enters a new zodiac sign every 30 degrees."
     # ),
 
     # --- Makara Sankranti ---
-    FastingDay(
+    Upavaas(
         name="Makara Sankranti",
-        fasting_type=FastingType.SOLAR_BASED,
+        upavaas=UpavaasType.SOLAR_BASED,
         description="Observed when the Sun enters Makara Rashi, marking Uttarayana."
     ),
 ]
