@@ -20,7 +20,7 @@ function renderData(data) {
   pakshaEl.textContent = data.paksha ?? 'N/A';
   tithiEl.textContent = data.tithi ?? 'N/A';
   phaseEl.textContent = data.phase ?? 'N/A';
-  fastingEl.textContent = (data.fasting_days && data.fasting_days.length) ? data.fasting_days.map(z => z.name).join(", ") : 'N/A';
+  upavaasEl.textContent = (data.upavaas && data.upavaas.length) ? data.upavaas.map(z => z.name).join(", ") : 'N/A';
 
   sunRashiEl.textContent = data.surya_rashi ?? 'N/A';
   moonRashiEl.textContent = data.chandra_rashi ?? 'N/A';
@@ -61,7 +61,7 @@ function updateJsonLdTag(data) {
 
 function clearDisplay() {
   displayDate.textContent = exampleDate;
-  const els = [ayanaEl, rituEl, masaEl, pakshaEl, tithiEl, phaseEl, fastingEl, sunRashiEl, moonRashiEl, sunLonEl, moonLonEl, longAngleEl];
+  const els = [ayanaEl, rituEl, masaEl, pakshaEl, tithiEl, phaseEl, upavaasEl, sunRashiEl, moonRashiEl, sunLonEl, moonLonEl, longAngleEl];
   els.forEach(e => e.textContent = 'N/A');
   sunXYZPre.textContent = moonXYZPre.textContent = 'N/A';
 }
