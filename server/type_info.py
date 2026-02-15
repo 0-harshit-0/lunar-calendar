@@ -167,7 +167,7 @@ UPAVAASs: List[Upavaas] = [
     # --- Ekadashi ---
     Upavaas(
         name="Ekadashi",
-        upavaas=UpavaasType.MIXED_TIME_RULE,
+        upavaas_type=UpavaasType.MIXED_TIME_RULE,
         tithi=Tithi.EKADASHI,
         description="Observed on the 11th lunar tithi when it prevails at local sunrise."
     ),
@@ -175,7 +175,7 @@ UPAVAASs: List[Upavaas] = [
     # --- Pradosha ---
     Upavaas(
         name="Pradosha",
-        upavaas=UpavaasType.MIXED_TIME_RULE,
+        upavaas_type=UpavaasType.MIXED_TIME_RULE,
         tithi=Tithi.TRAYODASHI,
         description="Observed on the 13th tithi during the evening twilight period."
     ),
@@ -183,7 +183,7 @@ UPAVAASs: List[Upavaas] = [
     # --- Maha Shivaratri ---
     Upavaas(
         name="Maha Shivaratri",
-        upavaas=UpavaasType.MIXED_TIME_RULE,
+        upavaas_type=UpavaasType.MIXED_TIME_RULE,
         tithi=Tithi.CHATURDASHI,
         paksha=Paksha.KRISHNA,
         masa=Masa.MAGHA,
@@ -193,7 +193,7 @@ UPAVAASs: List[Upavaas] = [
     # --- Amavasya ---
     Upavaas(
         name="Amavasya",
-        upavaas=UpavaasType.TITHI_BASED,
+        upavaas_type=UpavaasType.TITHI_BASED,
         tithi=Tithi.AMAVASYA,
         description="Observed on the new moon when Moon–Sun longitude difference reaches 360°."
     ),
@@ -201,7 +201,7 @@ UPAVAASs: List[Upavaas] = [
     # --- Purnima ---
     Upavaas(
         name="Purnima",
-        upavaas=UpavaasType.TITHI_BASED,
+        upavaas_type=UpavaasType.TITHI_BASED,
         tithi=Tithi.PURNIMA,
         description="Observed on the full moon when Moon–Sun longitude difference reaches 180°."
     ),
@@ -209,7 +209,7 @@ UPAVAASs: List[Upavaas] = [
     # --- Sankashti Chaturthi ---
     Upavaas(
         name="Sankashti Chaturthi",
-        upavaas=UpavaasType.TITHI_BASED,
+        upavaas_type=UpavaasType.TITHI_BASED,
         tithi=Tithi.CHATURTHI,
         paksha=Paksha.KRISHNA,
         description="Krishna Paksha Chaturthi dedicated to Ganesha, observed till moonrise."
@@ -218,7 +218,7 @@ UPAVAASs: List[Upavaas] = [
     # --- Vinayaka Chaturthi ---
     Upavaas(
         name="Vinayaka Chaturthi",
-        upavaas=UpavaasType.TITHI_BASED,
+        upavaas_type=UpavaasType.TITHI_BASED,
         tithi=Tithi.CHATURTHI,
         paksha=Paksha.SHUKLA,
         description="Shukla Paksha Chaturthi dedicated to Ganesha."
@@ -227,7 +227,7 @@ UPAVAASs: List[Upavaas] = [
     # --- Ashtami ---
     Upavaas(
         name="Ashtami",
-        upavaas=UpavaasType.TITHI_BASED,
+        upavaas_type=UpavaasType.TITHI_BASED,
         tithi=Tithi.ASHTAMI,
         description="Observed on the 8th lunar tithi, commonly associated with Devi worship."
     ),
@@ -235,7 +235,7 @@ UPAVAASs: List[Upavaas] = [
     # --- Navami ---
     Upavaas(
         name="Navami",
-        upavaas=UpavaasType.TITHI_BASED,
+        upavaas_type=UpavaasType.TITHI_BASED,
         tithi=Tithi.NAVAMI,
         description="Observed on the 9th lunar tithi, notably during Navaratri."
     ),
@@ -243,7 +243,7 @@ UPAVAASs: List[Upavaas] = [
     # --- Dwadashi ---
     Upavaas(
         name="Dwadashi",
-        upavaas=UpavaasType.TITHI_BASED,
+        upavaas_type=UpavaasType.TITHI_BASED,
         tithi=Tithi.DWADASHI,
         description="Observed on the 12th tithi, often marking the breaking of Ekadashi fast."
     ),
@@ -251,14 +251,14 @@ UPAVAASs: List[Upavaas] = [
     # # --- Sankranti ---
     # Upavaas(
     #     name="Sankranti",PRATIPADA
-    #     upavaas=UpavaasType.SOLAR_BASED,
+    #     upavaas_type=UpavaasType.SOLAR_BASED,
     #     description="Observed when the Sun enters a new zodiac sign every 30 degrees."
     # ),
 
     # --- Makara Sankranti ---
     Upavaas(
         name="Makara Sankranti",
-        upavaas=UpavaasType.SOLAR_BASED,
+        upavaas_type=UpavaasType.SOLAR_BASED,
         description="Observed when the Sun enters Makara Rashi, marking Uttarayana."
     ),
 ]
