@@ -15,7 +15,7 @@ from fastapi.responses import JSONResponse
 from pydantic import BaseModel, Field, field_validator
 from cachetools import TTLCache
 
-from type_info import TITHIs, MASAs, RASHIs, UPAVAAS, Ayana, Ritu
+from type_info import TITHIs, MASAs, RASHIs, UPAVAASs, Ayana, Ritu
 from db import get_by_date, insert_row, start_tunnel, stop_tunnel, close_connection
 
 
@@ -126,7 +126,7 @@ def resolve_upavaas( *, tithi, paksha, masa, sun_lon ) -> list[dict]:
 
     results: list[dict] = []
 
-    for fd in UPAVAAS:
+    for fd in UPAVAASs:
 
         # --- tithi based ---
         if fd.tithi_name and fd.tithi_name != tithi.name:
