@@ -15,7 +15,7 @@ from fastapi.responses import JSONResponse
 from pydantic import BaseModel, Field, field_validator
 from cachetools import TTLCache
 
-from tithi import TITHIs, MASAs, RASHIs, UPAVAAS, Ayana, Ritu
+from type_info import TITHIs, MASAs, RASHIs, UPAVAAS, Ayana, Ritu
 from db import get_by_date, insert_row, start_tunnel, stop_tunnel, close_connection
 
 
