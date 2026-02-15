@@ -78,7 +78,7 @@ class Ritu(Enum):
     
 
 @dataclass(frozen=True)
-class Tithi:
+class TithiInfo:
     paksha: Paksha
     index: int
     name: Tithi
@@ -93,9 +93,9 @@ class Upavaas:
     description: str = ""
 
 
-TITHIs: List[Tithi] = [
+TITHIs: List[TithiInfo] = [
     *[
-        Tithi(Paksha.SHUKLA, i + 1, name)
+        TithiInfo(Paksha.SHUKLA, i + 1, name)
         for i, name in enumerate([
             Tithi.PRATIPADA,
             Tithi.DWITIYA,
@@ -115,7 +115,7 @@ TITHIs: List[Tithi] = [
         ])
     ],
     *[
-        Tithi(Paksha.KRISHNA, i + 1, name)
+        TithiInfo(Paksha.KRISHNA, i + 1, name)
         for i, name in enumerate([
             Tithi.PRATIPADA,
             Tithi.DWITIYA,
@@ -250,7 +250,7 @@ UPAVAASs: List[Upavaas] = [
 
     # # --- Sankranti ---
     # Upavaas(
-    #     name="Sankranti",
+    #     name="Sankranti",PRATIPADA
     #     upavaas=UpavaasType.SOLAR_BASED,
     #     description="Observed when the Sun enters a new zodiac sign every 30 degrees."
     # ),
