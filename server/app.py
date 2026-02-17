@@ -129,7 +129,7 @@ def resolve_upavaas( *, tithi, paksha, masa, sun_lon ) -> list[dict]:
     for fd in UPAVAASs:
 
         # --- tithi based ---
-        if fd.tithi_name and fd.tithi_name != tithi.name:
+        if fd.tithi and fd.tithi != tithi.name:
             continue
 
         if fd.paksha and fd.paksha != tithi.paksha:
