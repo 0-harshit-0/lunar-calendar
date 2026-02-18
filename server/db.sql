@@ -15,6 +15,8 @@ CREATE TABLE lunar_ephemeris (
     chandra_longitude_deg DOUBLE NOT NULL,
     longitudinal_angle_deg DOUBLE NOT NULL,
 
+    grahana VARCHAR(32) NOT NULL DEFAULT 'None',
+
     surya_xyz JSON NOT NULL,
     chandra_xyz JSON NOT NULL,
 

@@ -1,7 +1,7 @@
 import math
 import re
 import urllib.parse
-from datetime import datetime, timezone, timedelta
+from datetime import datetime, timezone
 from typing import Tuple, Dict
 
 import requests
@@ -12,9 +12,9 @@ from slowapi.util import get_remote_address
 from slowapi.errors import RateLimitExceeded
 from fastapi.responses import JSONResponse
 
-from pydantic import BaseModel, Field, field_validator
 from cachetools import TTLCache
 
+from models import LunarInfoQuery, LunarResponse, PlanetsResponse
 from type_info import TITHIs, MASAs, RASHIs, UPAVAASs, Ayana, Ritu
 from db import get_by_date, insert_row, start_tunnel, stop_tunnel, close_connection
 
@@ -57,12 +57,67 @@ def rate_limit_handler(request: Request, exc: RateLimitExceeded):
         status_code=429,
         content={"detail": "Rate limit exceeded"}
     )
+
+
 # ------------------ utilities ------------------
+
+def cartesian_to_latitude(x: float, y: float, z: float) -> float:
+    r = math.sqrt(x*x + y*y + z*z)
+    if r == 0:
+        return 0.0
+    value = max(-1.0, min(1.0, z / r))
+    return math.degrees(math.asin(value))
+
 
 def cartesian_to_longitude(x: float, y: float, z: float) -> float:
     lon = math.degrees(math.atan2(y, x))
     return lon % 360
 
+def get_ritu_from_longitude(lon: float) -> Ritu:
+    lon = lon % 360
+
+    if 0 <= lon < 60:
+        return Ritu.VASANTA
+    if 60 <= lon < 120:
+        return Ritu.GRISHMA
+    if 120 <= lon < 180:
+        return Ritu.VARSHA
+    if 180 <= lon < 240:
+        return Ritu.SHARAD
+    if 240 <= lon < 300:
+        return Ritu.HEMANTA
+    return Ritu.SHISHIRA
+
+
+def resolve_upavaas( *, tithi, paksha, masa, surya_lon ) -> list[dict]:
+    results: list[dict] = []
+
+    for fd in UPAVAASs:
+        # --- tithi based ---
+        if fd.tithi and fd.tithi != tithi.name:
+            continue
+
+        if fd.paksha and fd.paksha != tithi.paksha:
+            continue
+
+        if fd.masa and fd.masa != masa:
+            continue
+
+        # --- solar based ---
+        if fd.upavaas_type.name == "SOLAR_BASED":
+            if "Makara" in fd.name:
+                if not (270 <= surya_lon < 300):
+                    continue
+
+        results.append({
+            "name": fd.name,
+            "description": fd.description
+        })
+
+    return results
+
+
+# ------------------ core service ------------------
 
 def get_horizons_xyz(command: str, date: str, center: str="399") -> Tuple[float, float, float]:
     params = {
@@ -107,155 +162,79 @@ def get_horizons_xyz(command: str, date: str, center: str="399") -> Tuple[float,
     raise HTTPException(502, "Ephemeris parsing failed")
 
 
-def get_ritu_from_longitude(lon: float) -> Ritu:
-    lon %= 360
-    if lon >= 330 or lon < 30:
-        return Ritu.VASANTA
-    if lon < 90:
-        return Ritu.GRISHMA
-    if lon < 150:
-        return Ritu.VARSHA
-    if lon < 210:
-        return Ritu.SHARAD
-    if lon < 270:
-        return Ritu.HEMANTA
-    return Ritu.SHISHIRA
-
-
-def resolve_upavaas( *, tithi, paksha, masa, sun_lon ) -> list[dict]:
-
-    results: list[dict] = []
-
-    for fd in UPAVAASs:
-
-        # --- tithi based ---
-        if fd.tithi and fd.tithi != tithi.name:
-            continue
-
-        if fd.paksha and fd.paksha != tithi.paksha:
-            continue
-
-        if fd.masa and fd.masa != masa:
-            continue
-
-        # --- solar based ---
-        if fd.upavaas_type.name == "SOLAR_BASED":
-            if "Makara" in fd.name:
-                if not (270 <= sun_lon < 300):
-                    continue
-
-        results.append({
-            "name": fd.name,
-            "description": fd.description
-        })
-
-    return results
-
-
-# ------------------ response model ------------------
-
-class LunarInfoQuery(BaseModel):
-    date: str | None = Field(
-        default=None,
-        description="UTC date in YYYY-MM-DD"
-    )
-
-    @field_validator("date")
-    @classmethod
-    def validate_date(cls, v: str | None) -> str | None:
-        if v is None:
-            return v
-        try:
-            datetime.strptime(v, "%Y-%m-%d")
-        except ValueError:
-            raise HTTPException(
-                status_code=400,
-                detail="Invalid date format, expected YYYY-MM-DD"
-            )
-            # raise ValueError("Invalid date format, expected YYYY-MM-DD")
-        return v
-
-class FastingInfo(BaseModel):
-    name: str
-    description: str
-
-class LunarResponse(BaseModel):
-    date: str
-
-    ayana: str
-    ritu: str
-    masa: str
-    paksha: str
-    tithi: str
-    phase: str
-
-    surya_rashi: str
-    chandra_rashi: str
-
-    surya_longitude_deg: float
-    chandra_longitude_deg: float
-    longitudinal_angle_deg: float
-
-    surya_xyz: Tuple[float, float, float]
-    chandra_xyz: Tuple[float, float, float]
-
-    upavaas: list[FastingInfo]
-
-
-class PlanetCoordinate(BaseModel):
-    name: str
-    xyz: Tuple[float, float, float]
-    longitude_deg: float
-
-class PlanetsResponse(BaseModel):
-    date: str
-    planets: list[PlanetCoordinate]
-
-# ------------------ core service ------------------
-
 def compute_ephemeris(date: str) -> Dict:
     print('computing...')
-    moon_xyz = get_horizons_xyz("301", date)
-    sun_xyz = get_horizons_xyz("10", date)
 
-    sun_lon = cartesian_to_longitude(*sun_xyz)
-    moon_lon = cartesian_to_longitude(*moon_xyz)
+    surya_xyz = get_horizons_xyz("10", date)
+    chandra_xyz = get_horizons_xyz("301", date)
 
-    angle = (moon_lon - sun_lon) % 360
+    surya_lon = cartesian_to_longitude(*surya_xyz)
+    chandra_lon = cartesian_to_longitude(*chandra_xyz)
+    chandra_lat = cartesian_to_latitude(*chandra_xyz)
 
-    tithi = TITHIs[int(angle // 12)]
-    masa = MASAs[int(sun_lon // 30)]
-    surya_rashi = RASHIs[int(sun_lon // 30)]
-    chandra_rashi = RASHIs[int(moon_lon // 30)]
+    angle = (chandra_lon - surya_lon) % 360
 
     ayana = (
         Ayana.UTTARAYANA
-        if sun_lon >= 270 or sun_lon < 90
+        if surya_lon >= 270 or surya_lon < 90
         else Ayana.DAKSHINAYANA
     )
+
+    angle_norm = angle % 360
+    surya_lon_norm = surya_lon % 360
+    chandra_lon_norm = chandra_lon % 360
+
+    tithi_index = min(int(angle_norm // 12), 29)
+    masa_index = min(int(surya_lon_norm // 30), 11)
+    surya_rashi_index = min(int(surya_lon_norm // 30), 11)
+    chandra_rashi_index = min(int(chandra_lon_norm // 30), 11)
+
+    tithi = TITHIs[tithi_index]
+    masa = MASAs[masa_index]
+    surya_rashi = RASHIs[surya_rashi_index]
+    chandra_rashi = RASHIs[chandra_rashi_index]
+
+    # ---- eclipse detection ----
+    grahana = "None"
+
+    # Strict astronomical thresholds
+    CONJUNCTION_THRESHOLD = 1.0     # degrees
+    OPPOSITION_THRESHOLD = 1.0      # degrees
+    NODE_LAT_THRESHOLD = 0.5        # degrees
+
+    is_conjunction = angle_norm < CONJUNCTION_THRESHOLD or angle_norm > 360 - CONJUNCTION_THRESHOLD
+    is_opposition = abs(angle_norm - 180) < OPPOSITION_THRESHOLD
+    near_node = abs(chandra_lat) < NODE_LAT_THRESHOLD
+
+    if is_conjunction and near_node:
+        grahana = "Surya"
+
+    elif is_opposition and near_node:
+        grahana = "Chandra"
 
     upavaas = resolve_upavaas(
         tithi=tithi,
         paksha=tithi.paksha,
         masa=masa,
-        sun_lon=sun_lon
+        surya_lon=surya_lon
     )
 
     return {
         "date": date,
         "ayana": ayana.value,
-        "ritu": get_ritu_from_longitude(sun_lon).value,
+        "ritu": get_ritu_from_longitude(surya_lon).value,
         "masa": masa.value,
         "paksha": tithi.paksha.value,
         "tithi": tithi.name.value,
-        "phase": "Waxing" if angle < 180 else "Waning",
+        "phase": "Waxing" if angle_norm < 180 else "Waning",
         "surya_rashi": surya_rashi.value,
         "chandra_rashi": chandra_rashi.value,
-        "surya_longitude_deg": sun_lon,
-        "chandra_longitude_deg": moon_lon,
+        "surya_longitude_deg": surya_lon,
+        "chandra_longitude_deg": chandra_lon,
         "longitudinal_angle_deg": angle,
-        "surya_xyz": sun_xyz,
-        "chandra_xyz": moon_xyz,
+        "grahana": grahana,
+        "surya_xyz": surya_xyz,
+        "chandra_xyz": chandra_xyz,
         "upavaas": upavaas,
     }
 
@@ -276,7 +255,8 @@ def compute_all_planets(date: str) -> Dict:
         "date": date,
         "planets": planet_data
     }
-    
+
+
 # ------------------ API ------------------
 
 @app.get("/")
@@ -306,7 +286,6 @@ def lunar_angle(
         return row
 
     data = compute_ephemeris(date)
-
     insert_row(data)
     cache[date] = data
 

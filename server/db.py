@@ -69,6 +69,7 @@ def close_connection():
 
 def get_by_date(date: str):
     conn = get_connection()
+    # AND grahana <> 'None'
     with conn.cursor() as cur:
         cur.execute(
             "SELECT * FROM lunar_ephemeris WHERE date = %s AND upavaas IS NOT NULL",
@@ -89,15 +90,14 @@ def get_by_date(date: str):
         row["chandra_xyz"] = tuple(json.loads(row["chandra_xyz"]))
 
         # normalize upavaas JSON -> list
-        raw = row.get("upavaas")
-        # print("raw", raw)
-        if raw is None or raw == "null":
+        upavaas_raw = row.get("upavaas")
+        if upavaas_raw is None or upavaas_raw == "null":
             return None
             # row["upavaas"] = []
-        elif isinstance(raw, str):
-            row["upavaas"] = json.loads(raw)
+        elif isinstance(upavaas_raw, str):
+            row["upavaas"] = json.loads(upavaas_raw)
         else:
-            row["upavaas"] = raw
+            row["upavaas"] = upavaas_raw
 
         return row
 
@@ -106,6 +106,7 @@ def insert_row(data: dict):
     conn = get_connection()
 
     data = data.copy()
+    data["grahana"] = data.get("grahana", "None")
     data["surya_xyz"] = json.dumps(data["surya_xyz"])
     data["chandra_xyz"] = json.dumps(data["chandra_xyz"])
     data["upavaas"] = json.dumps(data.get("upavaas", []))
@@ -118,6 +119,7 @@ def insert_row(data: dict):
                 surya_rashi, chandra_rashi,
                 surya_longitude_deg, chandra_longitude_deg,
                 longitudinal_angle_deg,
+                grahana,
                 surya_xyz, chandra_xyz, upavaas
             )
             VALUES (
@@ -126,6 +128,7 @@ def insert_row(data: dict):
                 %(surya_rashi)s, %(chandra_rashi)s,
                 %(surya_longitude_deg)s, %(chandra_longitude_deg)s,
                 %(longitudinal_angle_deg)s,
+                %(grahana)s,
                 %(surya_xyz)s, %(chandra_xyz)s, %(upavaas)s
             )
             ON DUPLICATE KEY UPDATE
@@ -140,9 +143,12 @@ def insert_row(data: dict):
                 surya_longitude_deg = VALUES(surya_longitude_deg),
                 chandra_longitude_deg = VALUES(chandra_longitude_deg),
                 longitudinal_angle_deg = VALUES(longitudinal_angle_deg),
+                grahana = VALUES(grahana),
                 surya_xyz = VALUES(surya_xyz),
                 chandra_xyz = VALUES(chandra_xyz),
                 upavaas = VALUES(upavaas)
             """,
             data,
         )
+
+    conn.commit()
