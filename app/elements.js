@@ -13,6 +13,7 @@ const masaEl = document.getElementById('masa');
 const pakshaEl = document.getElementById('paksha');
 const tithiEl = document.getElementById('tithi');
 const phaseEl = document.getElementById('phase');
+const grahanaEl = document.getElementById('grahana');
 const upavaasEl = document.getElementById('upavaas');
 const sunRashiEl = document.getElementById('sunRashi');
 const moonRashiEl = document.getElementById('moonRashi');

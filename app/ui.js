@@ -21,6 +21,9 @@ function renderData(data) {
   tithiEl.textContent = data.tithi ?? 'N/A';
   phaseEl.textContent = data.phase ?? 'N/A';
   upavaasEl.textContent = (data.upavaas && data.upavaas.length) ? data.upavaas.map(z => z.name).join(", ") : 'N/A';
+  grahanaEl.textContent = (data.grahana && data.grahana !== "None") 
+  ? (data.grahana === "Surya" ? "Solar Eclipse" : "Lunar Eclipse")
+  : "None";
 
   sunRashiEl.textContent = data.surya_rashi ?? 'N/A';
   moonRashiEl.textContent = data.chandra_rashi ?? 'N/A';
@@ -46,7 +49,8 @@ function updateJsonLdTag(data) {
       { "name": "ritu", "value": data.ritu },
       { "name": "masa", "value": data.masa },
       { "name": "paksha", "value": data.paksha },
-      { "name": "tithi", "value": data.tithi }
+      { "name": "tithi", "value": data.tithi },
+      { "name": "grahana", "value": data.grahana }
     ]
   };
   if (existing) existing.textContent = JSON.stringify(payload);
@@ -61,7 +65,7 @@ function updateJsonLdTag(data) {
 
 function clearDisplay() {
   displayDate.textContent = exampleDate;
-  const els = [ayanaEl, rituEl, masaEl, pakshaEl, tithiEl, phaseEl, upavaasEl, sunRashiEl, moonRashiEl, sunLonEl, moonLonEl, longAngleEl];
+  const els = [ayanaEl, rituEl, masaEl, pakshaEl, tithiEl, phaseEl, upavaasEl, sunRashiEl, moonRashiEl, sunLonEl, moonLonEl, longAngleEl, grahanaEl];
   els.forEach(e => e.textContent = 'N/A');
   sunXYZPre.textContent = moonXYZPre.textContent = 'N/A';
 }
