@@ -123,7 +123,7 @@ camera.position.set(0, 0, 100);
 // camera.lookAt(0, 300, 0);
 
 renderer.setSize(window.innerWidth, window.innerHeight);
-renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+// renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
 renderer.shadowMap.enabled = false;
 // renderer.shadowMap.type = THREE.PCFSoftShadowMap; // Softer shadows
 renderer.physicallyCorrectLights = false;
@@ -133,14 +133,12 @@ finalComposer.setSize(window.innerWidth, window.innerHeight);
 
 
 // document.body.appendChild(renderer.domElement);
-
 controls.target.set(0, 0, 0);
 
 
 // Planets Class
-
 class Planet {
-	constructor(id, name, x, y, z, r, c, distInfo) {
+	constructor(id, name, x, y, z, r, c) {
 		this.id = id;
 		this.name = name;
 
@@ -175,14 +173,14 @@ class Planet {
 
 		return this.mesh;
 	}
-	remapDistance(d, min, max, outMin = 100, outMax = 1500) {
-		const logMin = Math.log(min);
-		const logMax = Math.log(max);
-		const logD = Math.log(d);
+	// remapDistance(d, min, max, outMin = 100, outMax = 1500) {
+	// 	const logMin = Math.log(min);
+	// 	const logMax = Math.log(max);
+	// 	const logD = Math.log(d);
 
-		const t = (logD - logMin) / (logMax - logMin);
-		return outMin + t * (outMax - outMin);
-	}
+	// 	const t = (logD - logMin) / (logMax - logMin);
+	// 	return outMin + t * (outMax - outMin);
+	// }
 	info() {
 		return this;
 	}
@@ -229,13 +227,13 @@ class Sun extends Planet {
 
 
 // draw all
-
+let planetsObj = null;
 const planetsMesh = [];
 
 function planetsDraw(data) {
 	if (!data) return 0;
 
-	const distInfo = Sun.computeDistanceStats(data.planets);
+	// const distInfo = Sun.computeDistanceStats(data.planets);
 
 	data.planets.forEach((z, i) => {
 		if (!PlanetRadiiKM.get(z.name)) return;
@@ -251,15 +249,82 @@ function planetsDraw(data) {
 				...z.xyz,
 				PlanetRadiiKM.get(z.name),
 				new THREE.Color(PlanetColors.get(z.name)),
-				distInfo
+				// distInfo
 			);
 		}
 
-			console.log(planet.pos, planet.name)
+		console.log(planet.pos, planet.name)
 		planetsMesh.push(planet.draw());
 	});
 }
 
+function buildPlanetDrawer(data) {
+	if (!data) return 0;
+
+	const list = document.getElementById("planetList");
+	list.innerHTML = "";
+
+	data.planets.forEach((z, i) => {
+		const li = document.createElement("li");
+		li.className = "cursor-pointer hover:text-yellow-400";
+		li.textContent = z.name;
+
+		li.addEventListener("click", () => {
+			focusPlanet(planetsMesh[i]);
+		});
+
+		list.appendChild(li);
+	});
+}
+
+function focusPlanet(mesh) {
+	const targetPosition = mesh.position.clone();
+
+	const direction = new THREE.Vector3()
+		.subVectors(camera.position, controls.target)
+		.normalize();
+
+	const distance = mesh.geometry.parameters.radius * 5;
+	const newCameraPos = targetPosition.clone().add(direction.multiplyScalar(distance));
+
+	focusState = {
+		startTime: performance.now(),
+		duration: 1000,
+		startPos: camera.position.clone(),
+		startTarget: controls.target.clone(),
+		endPos: newCameraPos,
+		endTarget: targetPosition
+	};
+}
+function updateFocus(now) {
+	const elapsed = now - focusState.startTime;
+	let t = elapsed / focusState.duration;
+
+	if (t >= 1) {
+		t = 1;
+	}
+
+	camera.position.lerpVectors(
+		focusState.startPos,
+		focusState.endPos,
+		t
+	);
+
+	controls.target.lerpVectors(
+		focusState.startTarget,
+		focusState.endTarget,
+		t
+	);
+
+	controls.update();
+
+	if (t === 1) {
+		focusState = null;
+	}
+}
+
+
+// render
 function renderFun() {
   // console.log('r');
   // renderer.render(scene, camera);
@@ -270,10 +335,14 @@ function renderFun() {
 	finalComposer.render();
 }
 
+let focusState = null;
+function animate(now) {
 
-function animate() {
+	if (focusState) {
+		updateFocus(now);
+	}
+
 	renderFun();
-
 	renderAnimationID = requestAnimationFrame(animate);
 }
 
@@ -302,6 +371,7 @@ function onResize() {
 	// scene.add(light.target);
 export function init(data) {
   if (!data) return 0;
+  planetsObj = data;
 
   planetsMesh.forEach(mesh => scene.remove(mesh));
   planetsMesh.length = 0;
@@ -312,17 +382,9 @@ export function init(data) {
 	scene.add(camera);
   controls.update();
 
+  document.querySelector("#planetDrawer").style.display = "initial";
+  buildPlanetDrawer(data);
+
   animate();
+	window.addEventListener('resize', onResize);
 }
-
-
-window.addEventListener('resize', onResize);
-
-renderer.domElement.addEventListener('webglcontextlost', (e) => {
-  e.preventDefault();
-  console.log('WebGL context lost');
-});
-
-renderer.domElement.addEventListener('webglcontextrestored', () => {
-  console.log('WebGL context restored');
-});
