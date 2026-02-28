@@ -21,21 +21,27 @@ import { openSpace, closeSpace, init as spaceInit } from "./space_canvas.js";
   // form submit handler
   dateForm.addEventListener('submit', async (e) => {
     e.preventDefault();
-    const iso = dateInput.value;
+    let iso = dateInput.value;
     if (!iso) {
       setStatus('Please choose a date', true);
       return;
     }
+    // datetime-local drops seconds. Append :00 for the Python backend
+    if (iso.length === 16) iso += ":00";
+
     const data = await fetchForDate(iso);
     canvasDraw(data);
   });
 
   calendarCanvas.addEventListener('dblclick', async (e) => {
-    const iso = dateInput.value;
+    let iso = dateInput.value;
     if (!iso) {
       setStatus('Please choose a date', true);
       return;
     }
+    // datetime-local drops seconds. Append :00 for the Python backend
+    if (iso.length === 16) iso += ":00";
+
     const data = await fetchPlanetsForDate(iso);
     
     openSpace();
@@ -49,9 +55,18 @@ import { openSpace, closeSpace, init as spaceInit } from "./space_canvas.js";
   })
 
   dateInput.setAttribute('aria-label', 'Select date for lunar snapshot');
-  const today = new Date().toISOString().slice(0, 10);
-  dateInput.value = today;
-  displayDate.textContent = today;
-  const data = await fetchForDate(today);
+
+  // Get current local time formatted for <input type="datetime-local">
+  const now = new Date();
+  now.setMinutes(now.getMinutes() - now.getTimezoneOffset());
+  const todayLocal = now.toISOString().slice(0, 16); // YYYY-MM-DDTHH:MM
+  
+  dateInput.value = todayLocal;
+
+  // Format for initial API fetch
+  const initialApiString = todayLocal + ":00";
+  displayDate.textContent = initialApiString;
+  
+  const data = await fetchForDate(initialApiString);
   canvasDraw(data);
 })();

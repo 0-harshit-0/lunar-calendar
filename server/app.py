@@ -1,7 +1,7 @@
 import math
 import re
 import urllib.parse
-from datetime import datetime, timezone
+from datetime import datetime, timezone, timedelta
 from typing import Tuple, Dict
 
 import requests
@@ -16,7 +16,7 @@ from cachetools import TTLCache
 
 from models import LunarInfoQuery, LunarResponse, PlanetsResponse
 from type_info import TITHIs, MASAs, RASHIs, UPAVAASs, Ayana, Ritu
-from db import get_by_date, insert_row, start_tunnel, stop_tunnel, close_connection
+from db import get_by_timestamp, insert_row, start_tunnel, stop_tunnel, close_connection
 
 
 app = FastAPI(title="Lunar Calendar API")
@@ -119,14 +119,17 @@ def resolve_upavaas( *, tithi, paksha, masa, surya_lon ) -> list[dict]:
 
 # ------------------ core service ------------------
 
-def get_horizons_xyz(command: str, date: str, center: str="399") -> Tuple[float, float, float]:
+def get_horizons_xyz(command: str, timestamp: str, center: str="399") -> Tuple[float, float, float]:
+    dt_start = datetime.strptime(timestamp, "%Y-%m-%dT%H:%M:%S")
+    dt_stop = dt_start + timedelta(minutes=1)
+
     params = {
         "format": "json",
         "COMMAND": f"'{command}'",
         "CENTER": f"'500@{center}'",
         "EPHEM_TYPE": "'VECTORS'",
-        "START_TIME": f"'{date} 00:00'",
-        "STOP_TIME": f"'{date} 00:01'",
+        "START_TIME": f"'{dt_start.strftime("%Y-%m-%d %H:%M:%S")}'",
+        "STOP_TIME": f"'{dt_stop.strftime("%Y-%m-%d %H:%M:%S")}'",
         "STEP_SIZE": "'1 m'",
         "REF_PLANE": "'ECLIPTIC'",
         "REF_SYSTEM": "'J2000'",
@@ -162,11 +165,11 @@ def get_horizons_xyz(command: str, date: str, center: str="399") -> Tuple[float,
     raise HTTPException(502, "Ephemeris parsing failed")
 
 
-def compute_ephemeris(date: str) -> Dict:
+def compute_ephemeris(timestamp: str) -> Dict:
     print('computing...')
 
-    surya_xyz = get_horizons_xyz("10", date)
-    chandra_xyz = get_horizons_xyz("301", date)
+    surya_xyz = get_horizons_xyz("10", timestamp)
+    chandra_xyz = get_horizons_xyz("301", timestamp)
 
     surya_lon = cartesian_to_longitude(*surya_xyz)
     chandra_lon = cartesian_to_longitude(*chandra_xyz)
@@ -220,7 +223,7 @@ def compute_ephemeris(date: str) -> Dict:
     )
 
     return {
-        "date": date,
+        "timestamp": timestamp,
         "ayana": ayana.value,
         "ritu": get_ritu_from_longitude(surya_lon).value,
         "masa": masa.value,
@@ -263,6 +266,7 @@ def compute_all_planets(date: str) -> Dict:
 def index():
     return "hello world!"
 
+
 @app.get(
     "/info",
     response_model=LunarResponse,
@@ -273,21 +277,25 @@ def lunar_angle(
     request: Request,
     query: LunarInfoQuery = Depends()
 ):
-    date = query.date
-    if date is None:
-        date = datetime.now(timezone.utc).strftime("%Y-%m-%d")
+    timestamp = query.timestamp
+    if timestamp is None:
+        timestamp = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%S")
 
-    if date in cache:
-        return cache[date]
+    if timestamp in cache:
+        return cache[timestamp]
 
-    row = get_by_date(date)
+    # return from cache if present
+    row = get_by_timestamp(timestamp)
     if row:
-        cache[date] = row
+        cache[timestamp] = row
         return row
 
-    data = compute_ephemeris(date)
+    # compute
+    data = compute_ephemeris(timestamp)
+
+    # store and cache
     insert_row(data)
-    cache[date] = data
+    cache[timestamp] = data
 
     return data
 
@@ -316,18 +324,25 @@ def get_planets(
     request: Request,
     query: LunarInfoQuery = Depends()
 ):
-    date = query.date
-    if date is None:
-        date = datetime.now(timezone.utc).strftime("%Y-%m-%d")
+    input_date = query.timestamp
+    
+    # If no date provided, get today at midnight
+    if input_date is None:
+        target_timestamp = datetime.now(timezone.utc).strftime("%Y-%m-%dT00:00:00")
+    else:
+        # Force whatever string the user sent to midnight
+        # We take the first 10 chars (YYYY-MM-DD) and append 00:00:00
+        # This handles '2026-02-28' or '2026-02-28T14:30:00'
+        target_timestamp = f"{input_date[:10]}T00:00:00"
 
-    # Use a specific prefix for planet cache to avoid collisions with /info
-    cache_key = f"planets_{date}"
+    # Cache key uses the normalized midnight timestamp
+    cache_key = f"planets_{target_timestamp}"
     
     if cache_key in cache:
         return cache[cache_key]
 
-    # No DB storage requested, just compute and cache
-    data = compute_all_planets(date)
+    # compute_all_planets now receives 'YYYY-MM-DDT00:00:00'
+    data = compute_all_planets(target_timestamp)
     cache[cache_key] = data
 
     return data

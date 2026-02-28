@@ -10,7 +10,7 @@ function setStatus(msg, isError = false) {
 }
 
 function renderData(data) {
-  const iso = data.date || dateInput.value || exampleDate;
+  const iso = data.timestamp || dateInput.value || new Date().toISOString();
   displayDate.textContent = iso;
 
   // plain text fields
@@ -34,16 +34,16 @@ function renderData(data) {
   sunXYZPre.textContent = Array.isArray(data.surya_xyz) ? '[' + data.surya_xyz.map(n => formatNumber(n, 3)).join(', ') + ']' : 'N/A';
   moonXYZPre.textContent = Array.isArray(data.chandra_xyz) ? '[' + data.chandra_xyz.map(n => formatNumber(n, 3)).join(', ') + ']' : 'N/A';
 
-  updateJsonLdTag(data);
+  updateJsonLdTag(data, iso);
 }
 
-function updateJsonLdTag(data) {
+function updateJsonLdTag(data, iso) {
   let existing = document.querySelector('script[type="application/ld+json"][data-generated="lunar-info"]');
   const payload = {
     "@context": "https://schema.org",
     "@type": "Observation",
-    "name": "Lunar snapshot for " + (data.date || ''),
-    "observationDate": data.date || '',
+    "name": "Lunar snapshot for " + iso,
+    "observationDate": iso || '',
     "additionalProperty": [
       { "name": "ayana", "value": data.ayana },
       { "name": "ritu", "value": data.ritu },
@@ -64,7 +64,7 @@ function updateJsonLdTag(data) {
 }
 
 function clearDisplay() {
-  displayDate.textContent = exampleDate;
+  displayDate.textContent = "";
   const els = [ayanaEl, rituEl, masaEl, pakshaEl, tithiEl, phaseEl, upavaasEl, sunRashiEl, moonRashiEl, sunLonEl, moonLonEl, longAngleEl, grahanaEl];
   els.forEach(e => e.textContent = 'N/A');
   sunXYZPre.textContent = moonXYZPre.textContent = 'N/A';
@@ -79,7 +79,7 @@ function enableJsonActions(data) {
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = `lunar-${data.date || 'data'}.json`;
+    a.download = `lunar-${data.timestamp || 'data'}.json`;
     document.body.appendChild(a);
     a.click();
     a.remove();

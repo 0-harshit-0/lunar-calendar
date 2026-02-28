@@ -1,4 +1,4 @@
-const API_BASE = 'https://lunar-calendar-laeb.onrender.com';
+const API_BASE = 'http://127.0.0.1:8000'; //'https://lunar-calendar-laeb.onrender.com';
 
 async function fetchForDate(isoDate) {
   setStatus('Loading data...');
@@ -17,7 +17,7 @@ async function fetchForDate(isoDate) {
 
     // 2. fetch from API
     const url = new URL(API_BASE+"/info");
-    url.searchParams.set('date', isoDate);
+    url.searchParams.set('timestamp', isoDate);
 
     const res = await fetch(url.toString(), { cache: 'no-store' });
     if (!res.ok) throw new Error('Network error ' + res.status);
@@ -56,7 +56,7 @@ async function fetchPlanetsForDate(isoDate) {
 
     // 2. fetch from API
     const url = new URL(API_BASE + '/planets');
-    url.searchParams.set('date', isoDate);
+    url.searchParams.set('timestamp', isoDate);
 
     const res = await fetch(url.toString(), { cache: 'no-store' });
     if (!res.ok) throw new Error('Network error ' + res.status);

@@ -1,4 +1,4 @@
-const MAX_CACHE_DAYS = 3;
+const MAX_CACHE_COUNT = 9;
 
 function loadCache(key) {
   try {
@@ -30,7 +30,7 @@ function setCachedDate(key, date, data) {
   const entries = Object.entries(cache)
     .sort((a, b) => a[1].storedAt - b[1].storedAt);
 
-  while (entries.length > MAX_CACHE_DAYS) {
+  while (entries.length > MAX_CACHE_COUNT) {
     const [oldestKey] = entries.shift();
     delete cache[oldestKey];
   }

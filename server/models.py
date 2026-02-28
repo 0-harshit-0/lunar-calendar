@@ -4,32 +4,33 @@ from typing import Tuple
 
 
 class LunarInfoQuery(BaseModel):
-    date: str | None = Field(
+    timestamp: str | None = Field(
         default=None,
-        description="UTC date in YYYY-MM-DD"
+        description="UTC timestamp in ISO 8601 format (YYYY-MM-DDTHH:MM:SS)"
     )
 
-    @field_validator("date")
+    @field_validator("timestamp")
     @classmethod
-    def validate_date(cls, v: str | None) -> str | None:
+    def validate_timestamp(cls, v: str | None) -> str | None:
         if v is None:
             return v
+        
         try:
-            datetime.strptime(v, "%Y-%m-%d")
+            # Check if it matches the format exactly
+            dt = datetime.strptime(v, "%Y-%m-%dT%H:%M:%S")
+            return dt.strftime("%Y-%m-%dT%H:%M:%S")
         except ValueError:
             raise HTTPException(
                 status_code=400,
-                detail="Invalid date format, expected YYYY-MM-DD"
+                detail="Invalid format. Expected YYYY-MM-DDTHH:MM:SS"
             )
-            # raise ValueError("Invalid date format, expected YYYY-MM-DD")
-        return v
 
 class FastingInfo(BaseModel):
     name: str
     description: str
 
 class LunarResponse(BaseModel):
-    date: str
+    timestamp: str
 
     ayana: str
     ritu: str
@@ -59,5 +60,5 @@ class PlanetCoordinate(BaseModel):
     longitude_deg: float
 
 class PlanetsResponse(BaseModel):
-    date: str
+    timestamp: str
     planets: list[PlanetCoordinate]
