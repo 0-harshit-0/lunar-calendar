@@ -21,28 +21,34 @@ import { openSpace, closeSpace, init as spaceInit } from "./space_canvas.js";
   // form submit handler
   dateForm.addEventListener('submit', async (e) => {
     e.preventDefault();
-    let iso = dateInput.value;
-    if (!iso) {
+    let datetime = dateInput.value;
+    if (!datetime) {
       setStatus('Please choose a date', true);
       return;
     }
     // datetime-local drops seconds. Append :00 for the Python backend
-    if (iso.length === 16) iso += ":00";
+    if (datetime.length === 16) datetime += ":00";
 
-    const data = await fetchForDate(iso);
+    const localDate = new Date(datetime);
+    const utcString = localDate.toISOString().replace(".000Z", "");
+
+    const data = await fetchForDate(utcString);
     canvasDraw(data);
   });
 
   calendarCanvas.addEventListener('dblclick', async (e) => {
-    let iso = dateInput.value;
-    if (!iso) {
+    let datetime = dateInput.value;
+    if (!datetime) {
       setStatus('Please choose a date', true);
       return;
     }
     // datetime-local drops seconds. Append :00 for the Python backend
-    if (iso.length === 16) iso += ":00";
+    if (datetime.length === 16) datetime += ":00";
 
-    const data = await fetchPlanetsForDate(iso);
+    const localDate = new Date(datetime);
+    const utcString = localDate.toISOString().replace(".000Z", "");
+
+    const data = await fetchForDate(utcString);
     
     openSpace();
     spaceInit(data);
@@ -62,11 +68,5 @@ import { openSpace, closeSpace, init as spaceInit } from "./space_canvas.js";
   const todayLocal = now.toISOString().slice(0, 16); // YYYY-MM-DDTHH:MM
   
   dateInput.value = todayLocal;
-
-  // Format for initial API fetch
-  const initialApiString = todayLocal + ":00";
-  displayDate.textContent = initialApiString;
-  
-  const data = await fetchForDate(initialApiString);
-  canvasDraw(data);
+  dateForm.submit();
 })();
