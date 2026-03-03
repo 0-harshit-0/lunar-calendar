@@ -68,5 +68,4 @@ import { openSpace, closeSpace, init as spaceInit } from "./space_canvas.js";
   const todayLocal = now.toISOString().slice(0, 16); // YYYY-MM-DDTHH:MM
   
   dateInput.value = todayLocal;
-  dateForm.submit();
 })();
