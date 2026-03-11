@@ -48,7 +48,7 @@ import { openSpace, closeSpace, init as spaceInit } from "./space_canvas.js";
     const localDate = new Date(datetime);
     const utcString = localDate.toISOString().replace(".000Z", "");
 
-    const data = await fetchForDate(utcString);
+    const data = await fetchPlanetsForDate(utcString);
     
     openSpace();
     spaceInit(data);
