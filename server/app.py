@@ -41,7 +41,6 @@ limiter = Limiter(
 # app.state.limiter = limiter # configure redis for multiple servers
 
 
-# in app.py add these lifecycle handlers (place near other top-level definitions)
 @app.on_event("startup")
 def startup():
     start_tunnel()
@@ -277,9 +276,21 @@ def lunar_angle(
     request: Request,
     query: LunarInfoQuery = Depends()
 ):
-    timestamp = query.timestamp
-    if timestamp is None:
-        timestamp = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%S")
+    if query.timestamp is None:
+        dt = datetime.now(timezone.utc)
+    else:
+        try:
+            # fromisoformat handles YYYY-MM-DD and YYYY-MM-DDTHH:MM:SS+Offset
+            dt = datetime.fromisoformat(query.timestamp)
+            
+            # If the user didn't provide a timezone, assume UTC
+            if dt.tzinfo is None:
+                dt = dt.replace(tzinfo=timezone.utc)
+            else:
+                # Convert provided timezone to UTC
+                dt = dt.astimezone(timezone.utc)
+        except ValueError:
+            raise HTTPException(400, "Invalid timestamp format. Use ISO 8601 (e.g., 2026-04-22T15:00:00Z)")
 
     if timestamp in cache:
         return cache[timestamp]
@@ -324,25 +335,28 @@ def get_planets(
     request: Request,
     query: LunarInfoQuery = Depends()
 ):
-    input_date = query.timestamp
-    
-    # If no date provided, get today at midnight
-    if input_date is None:
-        target_timestamp = datetime.now(timezone.utc).strftime("%Y-%m-%dT00:00:00")
-    else:
-        # Force whatever string the user sent to midnight
-        # We take the first 10 chars (YYYY-MM-DD) and append 00:00:00
-        # This handles '2026-02-28' or '2026-02-28T14:30:00'
-        target_timestamp = f"{input_date[:10]}T00:00:00"
+    try:
+        if query.timestamp is None:
+            dt = datetime.now(timezone.utc)
+        else:
+            dt = datetime.fromisoformat(query.timestamp)
+            if dt.tzinfo is None:
+                dt = dt.replace(tzinfo=timezone.utc)
+            else:
+                dt = dt.astimezone(timezone.utc)
+        
+        # Normalize to midnight UTC for the planet report
+        target_dt = dt.replace(hour=0, minute=0, second=0, microsecond=0)
+        target_timestamp = target_dt.strftime("%Y-%m-%dT%H:%M:%S")
+        
+    except ValueError:
+        raise HTTPException(400, "Invalid timestamp format.")
 
-    # Cache key uses the normalized midnight timestamp
     cache_key = f"planets_{target_timestamp}"
     
     if cache_key in cache:
         return cache[cache_key]
 
-    # compute_all_planets now receives 'YYYY-MM-DDT00:00:00'
     data = compute_all_planets(target_timestamp)
     cache[cache_key] = data
-
     return data
