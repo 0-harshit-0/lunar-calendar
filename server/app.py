@@ -88,7 +88,7 @@ def get_ritu_from_longitude(lon: float) -> Ritu:
     return Ritu.SHISHIRA
 
 
-def resolve_upavaas( *, tithi, paksha, masa, surya_lon ) -> list[dict]:
+def resolve_upavaas(*, tithi, paksha, masa, surya_lon) -> list[dict]:
     results: list[dict] = []
 
     for fd in UPAVAASs:
@@ -119,7 +119,8 @@ def resolve_upavaas( *, tithi, paksha, masa, surya_lon ) -> list[dict]:
 # ------------------ core service ------------------
 
 def get_horizons_xyz(command: str, timestamp: str, center: str="399") -> Tuple[float, float, float]:
-    dt_start = datetime.strptime(timestamp, "%Y-%m-%dT%H:%M:%S")
+    # parsing it to convert it to datetime object and then convert back to string
+    dt_start = datetime.strptime(timestamp, "%Y-%m-%d %H:%M:%S")
     dt_stop = dt_start + timedelta(minutes=1)
 
     params = {
@@ -241,11 +242,11 @@ def compute_ephemeris(timestamp: str) -> Dict:
     }
 
 
-def compute_all_planets(date: str) -> Dict:
+def compute_all_planets(timestamp: str) -> Dict:
     planet_data = []
     
     for name, cmd in PLANET_MAP.items():
-        xyz = get_horizons_xyz(cmd, date, "10")
+        xyz = get_horizons_xyz(cmd, timestamp, "10")
         lon = cartesian_to_longitude(*xyz)
         planet_data.append({
             "name": name,
@@ -254,7 +255,7 @@ def compute_all_planets(date: str) -> Dict:
         })
     
     return {
-        "date": date,
+        "timestamp": timestamp,
         "planets": planet_data
     }
 
@@ -276,37 +277,24 @@ def lunar_angle(
     request: Request,
     query: LunarInfoQuery = Depends()
 ):
-    if query.timestamp is None:
-        dt = datetime.now(timezone.utc)
-    else:
-        try:
-            # fromisoformat handles YYYY-MM-DD and YYYY-MM-DDTHH:MM:SS+Offset
-            dt = datetime.fromisoformat(query.timestamp)
-            
-            # If the user didn't provide a timezone, assume UTC
-            if dt.tzinfo is None:
-                dt = dt.replace(tzinfo=timezone.utc)
-            else:
-                # Convert provided timezone to UTC
-                dt = dt.astimezone(timezone.utc)
-        except ValueError:
-            raise HTTPException(400, "Invalid timestamp format. Use ISO 8601 (e.g., 2026-04-22T15:00:00Z)")
+    timestamp = query.timestamp
 
-    if timestamp in cache:
-        return cache[timestamp]
+    cache_key = f"lunar_{timestamp}"
 
     # return from cache if present
+    if cache_key in cache:
+        return cache[cache_key]
+
+    # return from storage if present
     row = get_by_timestamp(timestamp)
     if row:
-        cache[timestamp] = row
+        cache[cache_key] = row
         return row
 
-    # compute
+    # compute and store and cache
     data = compute_ephemeris(timestamp)
-
-    # store and cache
     insert_row(data)
-    cache[timestamp] = data
+    cache[cache_key] = data
 
     return data
 
@@ -335,28 +323,15 @@ def get_planets(
     request: Request,
     query: LunarInfoQuery = Depends()
 ):
-    try:
-        if query.timestamp is None:
-            dt = datetime.now(timezone.utc)
-        else:
-            dt = datetime.fromisoformat(query.timestamp)
-            if dt.tzinfo is None:
-                dt = dt.replace(tzinfo=timezone.utc)
-            else:
-                dt = dt.astimezone(timezone.utc)
-        
-        # Normalize to midnight UTC for the planet report
-        target_dt = dt.replace(hour=0, minute=0, second=0, microsecond=0)
-        target_timestamp = target_dt.strftime("%Y-%m-%dT%H:%M:%S")
-        
-    except ValueError:
-        raise HTTPException(400, "Invalid timestamp format.")
+    timestamp = query.timestamp
 
-    cache_key = f"planets_{target_timestamp}"
+    cache_key = f"planets_{timestamp}"
     
+    # return from cache if present
     if cache_key in cache:
         return cache[cache_key]
 
-    data = compute_all_planets(target_timestamp)
+    # compute and cache
+    data = compute_all_planets(timestamp)
     cache[cache_key] = data
     return data

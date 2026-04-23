@@ -1,8 +1,7 @@
 import os
 import json
-from datetime import datetime as datetime_type
-from datetime import datetime
 import pymysql
+from datetime import datetime
 from sshtunnel import SSHTunnelForwarder
 from dotenv import load_dotenv
 
@@ -69,7 +68,7 @@ def close_connection():
 
 
 def get_by_timestamp(timestamp: str):
-    formatted_time = datetime.strptime(timestamp, "%Y-%m-%dT%H:%M:%S")
+    formatted_time = datetime.strptime(timestamp, "%Y-%m-%d %H:%M:%S")
 
     conn = get_connection()
     # AND grahana <> 'None'
@@ -85,7 +84,7 @@ def get_by_timestamp(timestamp: str):
         row.pop("created_at", None)
 
         # normalize
-        if isinstance(row["utc_stamp"], datetime_type):
+        if isinstance(row["utc_stamp"], datetime):
             row["utc_stamp"] = row["utc_stamp"].isoformat()
 
         # normalize JSON -> tuple
@@ -101,6 +100,7 @@ def get_by_timestamp(timestamp: str):
         else:
             row["upavaas"] = upavaas_raw
 
+        print("sending from db")
         return row
 
 

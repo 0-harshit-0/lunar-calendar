@@ -1,4 +1,4 @@
-const API_BASE = 'https://lunar-calendar-laeb.onrender.com';
+const API_BASE = 'https://lunar-calendar-laeb.onrender.com'; //'http://localhost:8000'; //
 
 async function fetchForDate(isoDate) {
   setStatus('Loading data...');
