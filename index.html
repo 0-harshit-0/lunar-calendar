@@ -82,20 +82,26 @@
 
 <body class="bg-slate-50 text-slate-800 antialiased">
   <header class="bg-white shadow-sm w-full mx-auto px-3 md:px-9 py-6 flex flex-col gap-3 sm:flex-row items-center justify-between">
-      <div class="text-center sm:text-left">
-        <a href="/" class="inline-flex items-center gap-3 text-slate-900 no-underline " aria-label="Go to home">
-          <span class="font-semibold text-lg">Lunar Calendar</span>
-        </a>
-        <p class="text-sm text-slate-500 mt-1">Pick any date to see the moon and sun at a glance</p>
-      </div>
+    <div class="text-center sm:text-left">
+      <a href="/" class="inline-flex items-center gap-3 text-slate-900 no-underline" aria-label="Go to home">
+        <span class="font-semibold text-lg">Lunar Calendar</span>
+      </a>
+      <p class="text-sm text-slate-500 mt-1">Pick any date to see the moon and sun at a glance</p>
+    </div>
 
-      <form id="dateForm" class="flex items-center gap-3" aria-label="Choose date">
+    <!-- Form and Status Container -->
+    <div class="flex flex-col items-end">
+      <form id="dateForm" class="flex flex-col sm:flex-row items-center gap-3" aria-label="Choose date">
         <label for="dateInput" class="sr-only">Date</label>
         <input id="dateInput" name="date" type="datetime-local" class="focus-ring px-3 py-2 border rounded-md shadow-sm bg-white" aria-describedby="dateHelp" />
-        <button type="submit" class="inline-flex items-center gap-2 px-4 py-2 bg-indigo-600 text-white rounded-md shadow-sm hover:bg-indigo-700 focus-ring" id="fetchBtn">
+        <button type="submit" class="inline-flex justify-center items-center gap-2 px-4 py-2 bg-indigo-600 text-white rounded-md shadow-sm hover:bg-indigo-700 focus-ring w-full" id="fetchBtn">
           Show
         </button>
       </form>
+      
+      <!-- Status moved here -->
+      <p id="status" class="text-[10px] uppercase tracking-wider font-bold text-slate-400 mt-1 mr-1" aria-live="polite">Ready</p>
+    </div>
   </header>
 
   <main class="mx-auto px-3 md:px-9 py-8">
@@ -239,10 +245,6 @@
             </figure>
           </div>
         </section>
-
-        <div class="mt-4">
-          <p id="status" class="text-sm text-slate-500" aria-live="polite">Ready</p>
-        </div>
       </section>
 
       <!-- Right column: simple controls and notes -->
